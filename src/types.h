@@ -3107,7 +3107,7 @@ extern "C"
     {
         INGAME_MODELID trackID;
         SPLINEID splineID;
-        uint8_t unk8;
+        uint8_t PlanetTrackNumber; // 0..3, determines which of the up to 4 tracks of a planet this one is.
         uint8_t PlanetIdx; // Determines preview image, planet holo, planet name and intro movie
         uint8_t FavoritePilot;
         uint8_t unkb;

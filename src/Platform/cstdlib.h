@@ -175,7 +175,7 @@ size_t _strncnt(const char *str, size_t count);
 
 #define _strnicmp_ADDR (0x004aa280)
 #define _strnicmp c__strnicmp
-int strnicmp(const char *str1, const char *str2, size_t n);
+int _strnicmp(const char *str1, const char *str2, size_t n);
 
 #define memcpy_ADDR (0x0049f4e0)
 #define memcpy c_memcpy

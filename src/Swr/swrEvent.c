@@ -49,3 +49,9 @@ void swrEvent_FreeObjs(int event)
 {
     HANG("TODO");
 }
+
+// 0x00450b30
+void* swrEvent_GetItem(int event, int index)
+{
+    HANG("TODO");
+}
