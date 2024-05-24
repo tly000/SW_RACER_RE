@@ -153,7 +153,7 @@ void swrRace_ReplaceBullseyeWithCyYunga(void);
 
 void swrRace_VehicleStatisticsSubMenu(void* param_1, float param_2, float param_3);
 
-void swrRace_InRaceTimer(void* param_1, void* param_2);
+void swrRace_InRaceTimer(swrScore* param_1, swrObjJdge* param_2);
 
 void swrRace_InRaceEngineUI(void* param_1, int param_2);
 

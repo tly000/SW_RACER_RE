@@ -13,10 +13,9 @@ void Main_Shutdown(void)
     // TODO
 }
 
-// 0x00424150 HOOK
+// 0x00424150
 void Main_ShutdownError(void)
 {
-    const char* err = unknownError_buffer;
     Main_Shutdown();
     MessageBoxA(NULL, "Unknown error", "Unable to continue Error", 0x2010);
     exit(1);
@@ -29,7 +28,7 @@ int Main_Startup(char* cmdline)
     return 0;
 }
 
-// 0x00424430 HOOK
+// 0x00424430
 int Main_ParseCmdLine(char* cmdline)
 {
     char* token;

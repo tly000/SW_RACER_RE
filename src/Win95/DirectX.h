@@ -59,7 +59,7 @@ void DirectPlay_Destroy(void);
 
 BOOL __stdcall DirectPlay_EnumConnectionsCallback(const GUID* lpguidSP, LPVOID lpConnection, DWORD dwConnectionSize, LPCDPNAME lpName, DWORD dwFlags, LPVOID lpContext);
 
-int DirectDraw_GetSelectedDevice(StdDisplayDevice* device);
+int DirectDraw_GetSelectedDevice(swrDrawDevice* device);
 
 bool DirectDraw_GetAvailableVidMem(LPDWORD total, LPDWORD free);
 
@@ -67,19 +67,19 @@ IDirectDrawSurface4* DirectDraw_GetZBuffer(void);
 
 void DirectDraw_FillMainSurface(void);
 
-BOOL __stdcall DirectDraw_EnumerateA_Callback(GUID* directDraw_guid, LPSTR driver_name, LPSTR driver_desc, LPVOID swr_unk_struct);
+WINBOOL DirectDraw_EnumerateA_Callback(GUID* directDraw_guid, LPSTR driver_name, LPSTR driver_desc, LPVOID swr_unk_struct);
 
-HRESULT __stdcall DirectDraw_EnumDisplayModes_Callback(DDSURFACEDESC2* surfaceDesc, void* param_2);
+HRESULT DirectDraw_EnumDisplayModes_Callback(DDSURFACEDESC* surfaceDesc, void* param_2);
 
 int Direct3d_SetFogMode(void);
 
 int Direct3d_IsLensflareCompatible(void);
 
-void Direct3d_ConfigFog(float r, float g, float b, float near_, float far_);
+void Direct3d_ConfigFog(DWORD renderstate, float p2, float p3, float p4);
 bool Direct3d_CreateAndAttachViewport(void);
 
-HRESULT __stdcall Direct3d_EnumDevices_Callback(GUID* guid, char* description, char* name, D3DDEVICEDESC* hal_desc, D3DDEVICEDESC* hel_desc, void* ctx);
-HRESULT __stdcall Direct3d_EnumTextureFormats_Callback(DDPIXELFORMAT* format, void* ctx);
+HRESULT Direct3d_EnumDevices_Callback(GUID* guid, char* description, char* name, D3DDEVICEDESC* hal_desc, D3DDEVICEDESC* hel_desc, void* ctx);
+HRESULT Direct3d_EnumTextureFormats_Callback(DDPIXELFORMAT* format, void* ctx);
 
 HRESULT DirectX_DirectDrawEnumerateA(LPDDENUMCALLBACKA lpCallback, LPVOID lpContext);
 HRESULT DirectX_DirectDrawCreate(GUID* lpGuid, LPDIRECTDRAW* lplpDD, IUnknown* pUnkOuter);

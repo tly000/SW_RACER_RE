@@ -2,7 +2,7 @@
 #define WUREGISTRY_H
 
 #include "types.h"
-#include "globals.h"
+#include "generated/globals.h"
 
 #define wuRegistry_Startup_ADDR (0x0049d060)
 #define wuRegistry_Shutdown_ADDR (0x0049d0e0)

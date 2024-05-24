@@ -21,7 +21,7 @@ void Direct3d_ConfigFog2(short r, short g, short b, short a)
 }
 
 // 0x004094E0
-int rdFace_SetFogEnabled(int mode)
+int rdFace_SetFogEnabled(int)
 {
     HANG("TODO");
 }
@@ -63,13 +63,13 @@ void rdModel_ConvertSwrModelMesh(Gfx* display_list, rdModel3Mesh* result, swrMod
 }
 
 // 0x0044C440
-char rdModel_ApplyNodeSettings(char flags, short light_index)
+char rdModel_ApplyNodeSettings(char, short)
 {
     HANG("TODO");
 }
 
 // 0x0044C4C0
-void rdModel_RevertNodeSettings(char state)
+void rdModel_RevertNodeSettings(char)
 {
     HANG("TODO");
 }
@@ -81,19 +81,19 @@ int16_t AABBFrustumTest(float* aabb, bool full_test)
 }
 
 // 0x0044ca00
-void rdModel_Add3064NodeToScene(swrModel_Node* node)
+void rdModel_AddMeshGroupToScene(swrModel_NodeMeshGroup* node)
 {
     HANG("TODO");
 }
 
 // 0x0044ceb0
-void rdModel_Add3064NodeToScene2(swrModel_Node* node)
+void rdModel_AddMeshGroupToScene2(swrModel_NodeMeshGroup* node)
 {
     HANG("TODO");
 }
 
 // 0x0044d1e0
-void ApplyD065PivotTransform(rdMatrix34* inout_transform, const rdMatrix34* transform, const rdVector3* pivot)
+void NodeTransformedWithPivot_ApplyTransform(rdMatrix34* inout_transform, const rdMatrix34* transform, const rdVector3* pivot)
 {
     HANG("TODO");
 }
@@ -105,13 +105,13 @@ void rdModel_AddTransformedNodeToScene(int a1, rdMatrix34* transform, swrModel_N
 }
 
 // 0x0044d310
-void rdModel_AddD066NodeToScene(swrModel_Node* node)
+void rdModel_NodeTransformedComputedToScene(swrModel_Node* node)
 {
     HANG("TODO");
 }
 
 // 0x0044d740
-int SelectLODIndexIn5066Node(swrModel_Node* node)
+int NodeLODSelector_FindLODIndex(swrModel_Node* node)
 {
     HANG("TODO");
 }
@@ -147,7 +147,7 @@ void SetSecondaryLightColorsAndDirection(unsigned int light_index, short* ambien
 }
 
 // 0x0044E1F0
-void SetLightColorsAndDirectionFromPrimraryLight2(unsigned int index)
+void SetLightColorsAndDirectionFromPrimraryLight2(unsigned int)
 {
     HANG("TODO");
 }
@@ -159,13 +159,13 @@ void SetAlternativeLightColorsAndDirection2(int light_index, BOOL light_type2, s
 }
 
 // 0x0044E290
-void rdProcEntry_SetCurrentColor(int a1, int a2, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+void rdProcEntry_SetCurrentColor(int, int, uint8_t, uint8_t, uint8_t, uint8_t)
 {
     HANG("TODO");
 }
 
 // 0x00483750
-void swrModel_UnkUpdateViewTransforms2(int a1)
+void swrModel_UnkUpdateViewTransforms2(int)
 {
     HANG("TODO");
 }
@@ -183,13 +183,13 @@ float* SetAlternativeLightColorsAndDirection3(int light_index, BOOL light_type2,
 }
 
 // 0x00483A40
-int SetLightColorsAndDirectionFromPrimaryLight3(unsigned int a1)
+int SetLightColorsAndDirectionFromPrimaryLight3(unsigned int)
 {
     HANG("TODO");
 }
 
 // 0x00483A60
-short SetClearColor(short r, short g, short b)
+short SetClearColor(short, short, short)
 {
     HANG("TODO");
 }
@@ -201,7 +201,7 @@ void swrModel_UnkDraw(int x)
 }
 
 // 0x00483BB0
-void swrModel_UnkUpdateViewTransforms1(int x)
+void swrModel_UnkUpdateViewTransforms1(int)
 {
     HANG("TODO");
 }

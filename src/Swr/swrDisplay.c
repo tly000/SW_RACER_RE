@@ -30,12 +30,12 @@ void swrDisplay_Shutdown(void)
     stdDisplay_Shutdown();
 }
 
-// 0x00423840 HOOK
+// 0x00423840
 bool swrDisplay_Resize(swrMainDisplaySettings* displaySettings, int width, int height)
 {
     int opened;
 
-    if ((width == stdDisplayWindow_g.rasterInfo.width) && (height == stdDisplayWindow_g.rasterInfo.width))
+    if ((width == stdDisplayWindow_g.width) && (height == stdDisplayWindow_g.height))
     {
         return false;
     }
@@ -50,17 +50,13 @@ bool swrDisplay_Resize(swrMainDisplaySettings* displaySettings, int width, int h
     return opened == 0;
 }
 
-// 0x004238a0 HOOK
-int swrDisplay_SetWindowSize(void)
+// 0x004238a0
+int swrDisplay_SetWindowPos(void)
 {
-#if GLFW_BACKEND
-    return 1;
-#else
     if ((swrMainDisplay_windowed != 0) && (swrMainDisplay_currentDevice != 0))
     {
         Window_SetWindowPos(200, 0x14);
         return 1;
     }
-#endif
     return 0;
 }

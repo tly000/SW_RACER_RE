@@ -41,7 +41,7 @@ int rdCamera_SetProjectType(rdCamera* camera, rdCameraProjectType type);
 int rdCamera_UpdateProject(rdCamera* camera, float aspectRatio);
 int rdCamera_BuildFOV(rdCamera* camera);
 int rdCamera_BuildClipFrustum(rdCamera* camera, rdClipFrustum* outClip, float width, float height);
-void rdCamera_Update(rdMatrix34* orthoProj);
+void rdCamera_Update(const rdMatrix34* orthoProj);
 void rdCamera_OrthoProject(rdVector3* out, rdVector3* v);
 void rdCamera_OrthoProjectLst(rdVector3* vertices_out, rdVector3* vertices_in, unsigned int num_vertices);
 void rdCamera_OrthoProjectSquare(rdVector3* out, rdVector3* v);

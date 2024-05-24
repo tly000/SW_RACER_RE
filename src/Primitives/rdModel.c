@@ -4,7 +4,7 @@
 
 #include <macros.h>
 
-// 0x00408f70 HOOK
+// 0x00408f70
 void rdModel3_SetRootMaterials(RdModel3* rootModel)
 {
     rootModel->apMaterials = swrModel3_root_materials;
@@ -61,7 +61,7 @@ void rdModel3_DrawFace(RdFace* pFace, rdVector3* aTransformedVertices, int bIsBa
 }
 
 // 0x0048FAB0
-void rdModel3_SetFogFlags(int flags)
+void rdModel3_SetFogFlags(int)
 {
     HANG("TODO");
 }

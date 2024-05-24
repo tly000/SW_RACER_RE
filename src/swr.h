@@ -13,11 +13,15 @@
 
 #define swr_noop3_ADDR (0x00483ba0)
 
+#define sub_4456B0_ADDR (0x004456B0)
+
 void swr_noop2(void);
 
 void  playASoundImpl(int, short, float, float, short, int, int, int *);
 void  playASound(int, short, float, float, int);
 void  playASound2(int, short, float, float, int);
+
+void sub_4456B0();
 
 void swr_noop4(void);
 

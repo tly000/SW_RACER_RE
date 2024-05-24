@@ -35,7 +35,7 @@
 #include <vector>
 #include <tuple>
 
-#define hr_assert(x) { if(!SUCCEEDED(x)) abort(); }
+#define hr_assert(x) assert(SUCCEEDED(x))
 
 // DirectX
 #include <d3d.h>

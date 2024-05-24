@@ -25,6 +25,12 @@ void* swrEvent_FindObjectById(int event, int id)
     return NULL;
 }
 
+// 0x00450b00
+int swrEvent_GetEventCount(int event)
+{
+    HANG("TODO");
+}
+
 // 0x00450c00
 void swrEvent_DispatchSubEvents(void* obj, int* subEvents)
 {
@@ -46,6 +52,12 @@ void* swrEvent_AllocObj(int event)
 
 // 0x00450db0
 void swrEvent_FreeObjs(int event)
+{
+    HANG("TODO");
+}
+
+// 0x00450b30
+void* swrEvent_GetItem(int event, int index)
 {
     HANG("TODO");
 }

@@ -6,9 +6,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_definitions(WINDOWED_MODE_FIXES=1)
 add_compile_definitions(GLFW_BACKEND=1)
-set(USE_RELEASE_HOOK OFF)
+set(USE_RELEASE_HOOK ON)
 
 if (MINGW)
+    add_link_options(-static)
     add_compile_options(
             -Wno-multichar
             -Werror=incompatible-pointer-types
@@ -55,8 +56,7 @@ add_library(swe1r_functions OBJECT ${SOURCES})
 add_dependencies(swe1r_functions generate_global_h)
 target_include_directories(swe1r_functions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(swe1r_functions PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/generated)
-target_compile_definitions(swe1r_functions PUBLIC GLFW_INCLUDE_NONE=1)
-target_link_libraries(swe1r_functions PUBLIC swe1r_globals winmm Comctl32 glad glfw)
+target_link_libraries(swe1r_functions PUBLIC swe1r_globals winmm Comctl32)
 
 # based on $SOURCES, generate the hooked functions
 set(HOOK_HEADER_FILES "")
@@ -71,15 +71,15 @@ add_custom_command(
 )
 add_custom_target(generate_hooks ALL DEPENDS generated_hooks.stamp)
 
-if (USE_RELEASE_HOOK)
+if (OFF)
     # create our hook library
     file(GLOB HOOK_SOURCES
-            src/hook.c
-            src/generated/hook_generated.c
-            src/dllMainDInput.c)
+        src/hook.c
+        src/generated/hook_generated.c
+        src/dllMainDInput.c)
     add_library(dinput_hook SHARED ${HOOK_SOURCES})
     add_dependencies(dinput_hook generate_hooks)
-    target_link_libraries(dinput_hook PRIVATE swe1r_functions swe1r_globals ddraw opengl32 dxguid)
+    target_link_libraries(dinput_hook PRIVATE swe1r_functions swe1r_globals ddraw)
     target_link_options(dinput_hook PRIVATE "-Wl,--kill-at")
 
     if (GAME_DIR)
@@ -93,3 +93,5 @@ if (USE_RELEASE_HOOK)
 endif()
 
 add_subdirectory(dinput_hook)
+
+add_subdirectory(annodue_collision_viewer)

@@ -21,9 +21,13 @@
 
 #define swrObj_Free_ADDR (0x00450e30)
 
+#define KeyDownForPlayer1Or2_ADDR (0x0045E120)
+
 #define swrObjcMan_F0_ADDR (0x00451cd0)
 
 #define swrObjcMan_F2_ADDR (0x00451d40)
+
+#define swrObjJdge_CheckIfPauseRequested_ADDR (0x00462D40)
 
 #define swrObjcMan_F3_ADDR (0x004542e0)
 
@@ -122,6 +126,8 @@ int VerifySelectedTrack(swrObjHang* hang, int selectedTrackIdx);
 
 void swrObj_Free(swrObj* obj);
 
+int KeyDownForPlayer1Or2(int key_bitset);
+
 void swrObjcMan_F0(swrObjcMan* cman);
 
 void swrObjcMan_F2(swrObjcMan* cman);
@@ -154,6 +160,8 @@ void swrObjJdge_Clear(swrObjJdge* jdge, int event);
 void swrObjJdge_F0(swrObjJdge* jdge);
 
 void swrObjJdge_F2(swrObjJdge* jdge);
+
+int swrObjJdge_CheckIfPauseRequested();
 
 void swrObjJdge_F3(swrObjJdge* jdge);
 

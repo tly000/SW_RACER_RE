@@ -142,7 +142,7 @@ short swrSprite_getCurrentTextPos(int16_t*, int16_t*);
 uint8_t swrSprite_setCurrentSpriteColor(uint8_t, uint8_t, uint8_t, uint8_t);
 void rdProcEntry_Add2DQuad2(short, short, short, short, short, short, short, short);
 
-void rdProcEntry_Add2DPolygon(short, short, float, float, float, float, int, int, int);
+void rdProcEntry_Add2DPolygon(short, short, float, float, float, float, int, int, swrSpriteTexture*);
 void rdProcEntry_Add2DQuad3(short x0, short y0, short x1, short y1, float tex_width, float tex_height, BOOL textured, BOOL add_z_offset);
 void rdProcEntry_Add2DQuad4(short, short, short, short, short, short, short, short);
 void rdProcEntry_Add2DQuad(short x0, short y0, short x1, short y1, float tex_u0, float tex_v0, float tex_u1, float tex_v1);
@@ -161,6 +161,6 @@ void swrSprite_Draw(int* arg0, swrSpriteTexture*, RdMaterial**, float, float, fl
 void swrSprite_ResetCurrentMaterial();
 void swrSprite_InitDrawing();
 
-void swrSprite_Draw1(swrSpriteTexture*, short, int, float, float, float angle, short, short, int, float, unsigned __int8, float, unsigned __int8);
+void swrSprite_Draw1(swrSpriteTexture*, short, short, float, float, float angle, short, short, int, unsigned __int8, unsigned __int8, unsigned __int8, unsigned __int8);
 
 #endif // SWRSPRITE_H

@@ -10,10 +10,6 @@
 
 HRESULT(WINAPI* DirectInputCreateA_orig)(HINSTANCE hinst, DWORD dwVersion, LPVOID* ppDI, LPUNKNOWN punkOuter) = NULL;
 
-#if _MSC_VER
-#pragma comment(linker, "/EXPORT:DirectInputCreateA=_DirectInputCreateA@16")
-#endif
-
 __declspec(dllexport) HRESULT WINAPI DirectInputCreateA(HINSTANCE hinst, DWORD dwVersion, LPVOID* ppDI, LPUNKNOWN punkOuter)
 {
     if (!DirectInputCreateA_orig)

@@ -8,6 +8,7 @@ import ida_auto
 for (func, addr) in function_addresses.items():
     idc.set_name(addr, func)
 
+toolchain_path = "Z:/opt/homebrew/Cellar/mingw-w64/11.0.1_1/toolchain-i686"
 
 clang_argv = [
     "-target i686-pc-windows-gnu",
@@ -16,9 +17,11 @@ clang_argv = [
     "-I", src_dir + "/generated/"
     "-mno-sse",
     "-fsyntax-only",
-    "--sysroot", "C:/mingw32",
-    "-isystem", "C:/mingw32/lib/clang/12.0.0/include",
-    "-isystem", "C:/mingw32/lib/gcc/i686-w64-mingw32/13.2.0/include"
+    "--sysroot", toolchain_path,
+    "-isystem", f"{toolchain_path}/lib/gcc/i686-w64-mingw32/13.2.0/include"
+    #"--sysroot", "C:/mingw32",
+    #"-isystem", "C:/mingw32/lib/clang/12.0.0/include",
+    #"-isystem", "C:/mingw32/lib/gcc/i686-w64-mingw32/13.2.0/include"
 ]
 ida_srclang.set_parser_argv("clang", " ".join(clang_argv))
 
