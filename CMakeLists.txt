@@ -93,5 +93,3 @@ if (OFF)
 endif()
 
 add_subdirectory(dinput_hook)
-
-add_subdirectory(annodue_collision_viewer)

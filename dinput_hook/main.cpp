@@ -31,6 +31,7 @@ extern "C" {
 #include <Swr/swrEvent.h>
 #include <Swr/swrRace.h>
 #include <Swr/swrRender.h>
+#include <Swr/swrViewport.h>
 #include <Win95/Window.h>
 #include <Win95/stdConsole.h>
 #include <Win95/stdDisplay.h>
@@ -53,39 +54,6 @@ LRESULT CALLBACK WndProc(HWND wnd, UINT code, WPARAM wparam, LPARAM lparam) {
 
 static bool imgui_initialized = false;
 static bool show_opengl = true;
-
-void dump_mapping_children(const swrModel_Node *node) {
-    if (!node)
-        return;
-
-    if (node->type & NODE_HAS_CHILDREN) {
-        for (int i = 0; i < node->num_children; i++)
-            dump_mapping_children(node->child_nodes[i]);
-    }
-    if (node->type == NODE_MESH_GROUP) {
-        for (int i = 0; i < node->num_children; i++) {
-            const swrModel_Mesh *mesh = node->meshes[i];
-            if (!mesh || !mesh->mapping)
-                continue;
-
-            for (auto it = mesh->mapping->subs; it; it = it->next) {
-                ImGui::Text("vector0=[%f,%f,%f] vector1=[%f,%f,%f] unk3=%f unk4=%f node=%p "
-                            "model_id=%d unk9=%x",
-                            it->vector0[0], it->vector0[1], it->vector0[2], it->vector1[0],
-                            it->vector1[1], it->vector1[2], it->unk3, it->unk4, it->affected_node,
-                            it->modelId, it->unk9);
-            }
-        }
-    }
-}
-
-void dump_mapping_children() {
-    // fprintf(hook_log, "mapping children:\n");
-    // fflush(hook_log);
-    dump_mapping_children(swrModel_unk_array[0].model_root_node);
-    // fprintf(hook_log, "mapping children end\n\n");
-    // fflush(hook_log);
-}
 
 void fix_lods_for_2_local_players(
     swrModel_Node *node,
@@ -145,8 +113,7 @@ int stdDisplay_Update_Hook() {
         const auto wnd = GetActiveWindow();
         if (!ImGui_ImplWin32_Init(wnd))
             std::abort();
-        if (!ImGui_ImplD3D_Init(std3D_pD3Device,
-                                (IDirectDrawSurface4 *) stdDisplay_g_backBuffer.ddraw_surface))
+        if (!ImGui_ImplD3D_Init(std3D_pD3Device, stdDisplay_g_backBuffer.pVSurface.pDDSurf))
             std::abort();
 
         WndProcOrig = (WNDPROC) SetWindowLongA(wnd, GWL_WNDPROC, (LONG) WndProc);
@@ -186,18 +153,18 @@ int stdDisplay_Update_Hook() {
                 memset(patch_pos, 0x90, 4);
             }
 
-            bool two_players = hang->unk70_count == 2;
+            bool two_players = hang->num_local_players == 2;
             if (ImGui::Checkbox("2 Player", &two_players)) {
-                hang->unk70_count = two_players ? 2 : 1;
+                hang->num_local_players = two_players ? 2 : 1;
             }
         }
 
         for (int i = 0; i < 4; i++) {
-            auto &unk = swrModel_unk_array[i];
+            auto &unk = swrViewport_array[i];
             ImGui::Text("Viewport %d: flags=%x x=%d y=%d w=%d h=%d fov=%f vis_flags1=%0x "
                         "vis_flags2=%0x root_node=%x",
-                        i, unk.flag, unk.viewport_x0, unk.viewport_y0, unk.viewport_x1,
-                        unk.viewport_y1, unk.fov_y_degrees, unk.node_flags1_any_match_for_rendering,
+                        i, unk.flag, unk.viewport_x1, unk.viewport_y1, unk.viewport_x2,
+                        unk.viewport_y2, unk.fov_y_degrees, unk.node_flags1_any_match_for_rendering,
                         unk.node_flags1_exact_match_for_rendering, unk.model_root_node);
         }
 
@@ -207,7 +174,6 @@ int stdDisplay_Update_Hook() {
             ImGui::Text("Test %d: obj.flags=%x flags0=%x flags1=%x", i, test_obj->obj.flags,
                         test_obj->flags0, test_obj->flags1);
         }
-        dump_mapping_children();
         ImGui::End();
 
         // Rendering
@@ -225,7 +191,7 @@ int stdDisplay_Update_Hook() {
 
     return hook_call_original(stdDisplay_Update);
 
-    auto *front_buffer = (IDirectDrawSurface4 *) stdDisplay_g_frontBuffer.ddraw_surface;
+    auto *front_buffer = stdDisplay_g_frontBuffer.pVSurface.pDDSurf;
     front_buffer->Flip(0, 0);
     return 0;
 }
@@ -259,61 +225,61 @@ void stdConsole_SetCursorPos_Hook(int X, int Y) {
     virtual_cursor_pos = POINT{X, Y};
 }
 
-void update_camera(const swrModel_unk &unk) {
+void update_camera(const swrViewport &viewport) {
     rdCamera_pCurCamera->pClipFrustum->bFarClip = 0;
-    rdCamera_pCurCamera->pClipFrustum->zNear = unk.near_clipping;
-    rdCamera_pCurCamera->pClipFrustum->zFar = unk.far_clipping;
-    rdCamera_pCurCamera->fov = std::min(std::max(unk.fov_y_degrees, 5.0f), 179.0f);
-    rdCamera_UpdateProject(rdCamera_pCurCamera, unk.aspect_ratio);
+    rdCamera_pCurCamera->pClipFrustum->zNear = viewport.near_clipping;
+    rdCamera_pCurCamera->pClipFrustum->zFar = viewport.far_clipping;
+    rdCamera_pCurCamera->fov = std::min(std::max(viewport.fov_y_degrees, 5.0f), 179.0f);
+    rdCamera_UpdateProject(rdCamera_pCurCamera, viewport.aspect_ratio);
     const rdMatrix34 mat{
-        (const rdVector3 &) unk.model_matrix.vA,
-        (const rdVector3 &) unk.model_matrix.vB,
-        (const rdVector3 &) unk.model_matrix.vC,
-        (const rdVector3 &) unk.model_matrix.vD,
+        (const rdVector3 &) viewport.model_matrix.vA,
+        (const rdVector3 &) viewport.model_matrix.vB,
+        (const rdVector3 &) viewport.model_matrix.vC,
+        (const rdVector3 &) viewport.model_matrix.vD,
     };
     rdCamera_Update(&mat);
 }
 
-void swrModel_UnkDraw_Hook(int x) {
-    auto &unk = swrModel_unk_array[x];
+void swrViewport_Render_Hook(int x) {
+    auto &viewport = swrViewport_array[x];
     auto cur_canvas = rdCamera_pCurCamera->canvas;
 
     const bool in_race = swrEvent_GetEventCount('Test') != 0;
     if (in_race && numLocalPlayers == 2) {
         if (x == 1) {
-            unk.viewport_x0 = 0;
-            unk.viewport_y0 = 0;
-            unk.viewport_x1 = 320;
-            unk.viewport_y1 = 120;
+            viewport.viewport_x1 = 0;
+            viewport.viewport_y1 = 0;
+            viewport.viewport_x2 = 320;
+            viewport.viewport_y2 = 120;
         } else if (x == 2) {
-            unk.viewport_x0 = 0;
-            unk.viewport_y0 = 120;
-            unk.viewport_x1 = 320;
-            unk.viewport_y1 = 240;
+            viewport.viewport_x1 = 0;
+            viewport.viewport_y1 = 120;
+            viewport.viewport_x2 = 320;
+            viewport.viewport_y2 = 240;
         }
     } else {
-        unk.viewport_x0 = 0;
-        unk.viewport_y0 = 0;
-        unk.viewport_x1 = 320;
-        unk.viewport_y1 = 240;
+        viewport.viewport_x1 = 0;
+        viewport.viewport_y1 = 0;
+        viewport.viewport_x2 = 320;
+        viewport.viewport_y2 = 240;
     }
-    update_camera(unk);
+    update_camera(viewport);
 
     std::map<swrModel_NodeLODSelector *, std::array<float, 8>> saved_lod_values;
     if (in_race && numLocalPlayers == 2) {
-        fix_lods_for_2_local_players(unk.model_root_node, saved_lod_values);
+        fix_lods_for_2_local_players(viewport.model_root_node, saved_lod_values);
     }
 
     IDirect3DViewport3 *backup_viewport = nullptr;
     std3D_pD3Device->GetCurrentViewport(&backup_viewport);
 
-    int v_x0 = (unk.viewport_x0) * screen_width / 320;
-    int v_y0 = (unk.viewport_y0) * screen_height / 240;
-    int v_x1 = (unk.viewport_x1) * screen_width / 320;
-    int v_y1 = (unk.viewport_y1) * screen_height / 240;
+    int v_x0 = (viewport.viewport_x1) * screen_width / 320;
+    int v_y0 = (viewport.viewport_y1) * screen_height / 240;
+    int v_x1 = (viewport.viewport_x2) * screen_width / 320;
+    int v_y1 = (viewport.viewport_y2) * screen_height / 240;
 
-    IDirect3DViewport3 *viewport;
-    std3D_pDirect3D->CreateViewport(&viewport, nullptr);
+    IDirect3DViewport3 *d3d_viewport;
+    std3D_pDirect3D->CreateViewport(&d3d_viewport, nullptr);
 
     // Setup viewport
     D3DVIEWPORT2 vp{};
@@ -329,22 +295,22 @@ void swrModel_UnkDraw_Hook(int x) {
     vp.dvClipWidth = v_x1 - v_x0;
     vp.dvClipHeight = v_y1 - v_y0;
 
-    std3D_pD3Device->AddViewport(viewport);
-    viewport->SetViewport2(&vp);
-    std3D_pD3Device->SetCurrentViewport(viewport);
+    std3D_pD3Device->AddViewport(d3d_viewport);
+    d3d_viewport->SetViewport2(&vp);
+    std3D_pD3Device->SetCurrentViewport(d3d_viewport);
 
     auto canvas = rdCanvas_New(1, &stdDisplay_g_backBuffer, v_x0, v_y0, v_x1, v_y1);
     rdCamera_SetCanvas(rdCamera_pCurCamera, canvas);
 
-    hook_call_original(swrModel_UnkDraw, x);
+    hook_call_original(swrViewport_Render, x);
     rdCamera_SetCanvas(rdCamera_pCurCamera, cur_canvas);
     rdCanvas_Free(canvas);
 
     rdCache_Flush();
 
     std3D_pD3Device->SetCurrentViewport(backup_viewport);
-    std3D_pD3Device->DeleteViewport(viewport);
-    viewport->Release();
+    std3D_pD3Device->DeleteViewport(d3d_viewport);
+    d3d_viewport->Release();
 
     // restore lod values
     if (in_race && numLocalPlayers == 2) {
@@ -415,7 +381,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
     fflush(hook_log);
 
     hook_replace(stdDisplay_Update, stdDisplay_Update_Hook);
-    hook_replace(swrModel_UnkDraw, swrModel_UnkDraw_Hook);
+    hook_replace(swrViewport_Render, swrViewport_Render_Hook);
     hook_replace(stdConsole_GetCursosPos, stdConsole_GetCursorPos_Hook);
     hook_replace(stdConsole_SetCursorPos, stdConsole_SetCursorPos_Hook);
     hook_replace(KeyDownForPlayer1Or2, KeyDownForPlayer1Or2_Hook);
