@@ -50,7 +50,7 @@ int stdControl_EnableAxis(int axisID)
     HANG("TODO");
 }
 
-// 0x00485630 HOOK
+// 0x00485630
 void stdControl_ReadControls(void)
 {
     if (!stdControl_bControlsActive)
@@ -89,7 +89,7 @@ int stdControl_ReadAxisAsKeyEx(int controlId)
     HANG("TODO");
 }
 
-// 0x00485880 HOOK
+// 0x00485880
 int stdControl_ReadKey(unsigned int keyNum, int* pNumPressed)
 {
     if (keyNum < 0)

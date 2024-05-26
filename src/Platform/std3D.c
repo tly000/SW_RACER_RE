@@ -8,7 +8,7 @@
 #include <Win95/Window.h>
 #include <Win95/stdDisplay.h>
 
-// 0x00489dc0 HOOK
+// 0x00489dc0
 int std3D_Startup(void)
 {
     memset(std3D_aTextureFormats, 0, sizeof(std3D_aTextureFormats));
@@ -32,7 +32,7 @@ int std3D_Startup(void)
     return 1;
 }
 
-// 0x00489e40 HOOK
+// 0x00489e40
 void std3D_Shutdown(void)
 {
     if (std3D_bOpen)
@@ -48,19 +48,19 @@ void std3D_Shutdown(void)
     std3D_bStartup = 0;
 }
 
-// 0x00489ea0 HOOK
+// 0x00489ea0
 int std3D_GetNumDevices(void)
 {
     return std3D_numDevices;
 }
 
-// 0x00489eb0 HOOK
+// 0x00489eb0
 Device3D* std3D_GetAllDevices(void)
 {
     return std3D_aDevices;
 }
 
-// 0x00489ec0 HOOK
+// 0x00489ec0
 int std3D_Open(unsigned int deviceNum)
 {
     if (std3D_bOpen)
@@ -145,7 +145,7 @@ int std3D_Open(unsigned int deviceNum)
     return 1;
 }
 
-// 0x0048a1c0 HOOK
+// 0x0048a1c0
 void std3D_Close(void)
 {
     std3D_ClearCacheList();
@@ -171,13 +171,13 @@ void std3D_Close(void)
     std3D_bOpen = 0;
 }
 
-// 0x0048a2f0 HOOK
+// 0x0048a2f0
 int std3D_GetNumTextureFormats(void)
 {
     return std3D_numTextureFormats;
 }
 
-// 0x0048a300 HOOK
+// 0x0048a300
 int std3D_StartScene(void)
 {
     ++std3D_frameCount;
@@ -185,14 +185,14 @@ int std3D_StartScene(void)
     return IDirect3DDevice3_BeginScene(std3D_pD3Device);
 }
 
-// 0x0048a330 HOOK
+// 0x0048a330
 void std3D_EndScene(void)
 {
     IDirect3DDevice3_EndScene(std3D_pD3Device);
     std3D_pD3DTex = 0;
 }
 
-// 0x0048a350 HOOK
+// 0x0048a350
 void std3D_DrawRenderList(LPDIRECT3DTEXTURE2 pTex, Std3DRenderState rdflags, LPD3DTLVERTEX aVerticies, int verticesCount, LPWORD lpwIndices, int indexCount)
 {
     if (verticesCount > std3D_g_maxVertices)
@@ -206,7 +206,7 @@ void std3D_DrawRenderList(LPDIRECT3DTEXTURE2 pTex, Std3DRenderState rdflags, LPD
     IDirect3DDevice3_DrawIndexedPrimitive(std3D_pD3Device, D3DPT_TRIANGLELIST, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1, aVerticies, verticesCount, lpwIndices, indexCount, D3DDP_DONOTUPDATEEXTENTS | D3DDP_DONOTLIGHT);
 }
 
-// 0x0048a3c0 HOOK
+// 0x0048a3c0
 void std3D_SetWireframeRenderState(void)
 {
     uint32_t rs = std3D_renderState;
@@ -218,7 +218,7 @@ void std3D_SetWireframeRenderState(void)
         std3D_pD3DTex = 0;
 }
 
-// 0x0048a3f0 HOOK
+// 0x0048a3f0
 void std3D_DrawLineStrip(LPD3DTLVERTEX pVertices, unsigned int numVertices)
 {
     if (numVertices > std3D_g_maxVertices)
@@ -227,7 +227,7 @@ void std3D_DrawLineStrip(LPD3DTLVERTEX pVertices, unsigned int numVertices)
     IDirect3DDevice3_DrawPrimitive(std3D_pD3Device, D3DPT_LINESTRIP, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1, pVertices, numVertices, D3DDP_DONOTCLIP);
 }
 
-// 0x0048a420 HOOK
+// 0x0048a420
 void std3D_DrawPointList(LPVOID lpvVertices, unsigned int dwVertexCount)
 {
     if (dwVertexCount > std3D_g_maxVertices)
@@ -236,7 +236,7 @@ void std3D_DrawPointList(LPVOID lpvVertices, unsigned int dwVertexCount)
     IDirect3DDevice3_DrawPrimitive(std3D_pD3Device, D3DPT_LINESTRIP, D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX1, lpvVertices, dwVertexCount, D3DDP_DONOTCLIP);
 }
 
-// 0x0048a450 HOOK
+// 0x0048a450
 void std3D_SetRenderState(Std3DRenderState rdflags)
 {
     if (std3D_renderState == rdflags)
@@ -367,7 +367,7 @@ error:
         IDirectDrawSurface4_Release(surface);
 }
 
-// 0x0048a9e0 HOOK
+// 0x0048a9e0
 void std3D_GetValidDimensions(unsigned int width, unsigned int height, unsigned int* pOutWidth, unsigned int* pOutHeight)
 {
     if (width < std3D_pCurDevice->caps.minTexWidth)
@@ -397,7 +397,7 @@ void std3D_GetValidDimensions(unsigned int width, unsigned int height, unsigned 
     }
 }
 
-// 0x0048aa40 HOOK
+// 0x0048aa40
 void std3D_ClearTexture(tSystemTexture* pTex)
 {
     if (pTex->pD3DSrcTexture)
@@ -414,7 +414,7 @@ void std3D_ClearTexture(tSystemTexture* pTex)
     *pTex = (tSystemTexture){};
 }
 
-// 0x0048aa80 HOOK
+// 0x0048aa80
 void std3D_AddToTextureCache(tSystemTexture* pCacheTexture, StdColorFormatType format)
 {
     IDirectDrawSurface4* surface = NULL;
@@ -466,7 +466,7 @@ error:
     pCacheTexture->frameNum = 0;
 }
 
-// 0x0048ac50 HOOK
+// 0x0048ac50
 void std3D_ClearCacheList(void)
 {
     tSystemTexture* curr = std3D_pFirstTexCache;
@@ -495,7 +495,7 @@ void std3D_ClearCacheList(void)
     std3D_frameCount = 1;
 }
 
-// 0x0048ace0 HOOK
+// 0x0048ace0
 void std3D_UpdateFrameCount(tSystemTexture* pTexture)
 {
     pTexture->frameNum = std3D_frameCount;
@@ -503,7 +503,7 @@ void std3D_UpdateFrameCount(tSystemTexture* pTexture)
     std3D_AddTextureToCacheList(pTexture);
 }
 
-// 0x0048AD10 HOOK
+// 0x0048AD10
 int std3D_GetDeviceCaps(int device_index, Device3DCaps* caps)
 {
     if (std3D_numDevices == 0 || device_index >= std3D_numDevices)
@@ -513,7 +513,7 @@ int std3D_GetDeviceCaps(int device_index, Device3DCaps* caps)
     return 1;
 }
 
-// 0x0048AD50 HOOK
+// 0x0048AD50
 int std3D_FindMatching3DDevice(const Device3DCaps* caps)
 {
     int best_matching_index = 0;
@@ -542,7 +542,7 @@ int std3D_FindMatching3DDevice(const Device3DCaps* caps)
     return best_matching_index;
 }
 
-// 0x0048add0 HOOK
+// 0x0048add0
 int std3D_FindClosestMode(const ColorInfo* mode)
 {
     int best_matching_index = 0;
@@ -584,7 +584,7 @@ int std3D_FindClosestMode(const ColorInfo* mode)
     return best_matching_index;
 }
 
-// 0x0048aeb0 HOOK
+// 0x0048aeb0
 int std3D_InitRenderState(void)
 {
     std3D_renderState = 0;
@@ -661,7 +661,7 @@ int std3D_InitRenderState(void)
     return 1;
 }
 
-// 0x0048b1b0 HOOK
+// 0x0048b1b0
 int std3D_SetTexFilterMode(void)
 {
     HRESULT result = S_OK;
@@ -673,7 +673,7 @@ int std3D_SetTexFilterMode(void)
     return IDirect3DDevice3_SetTextureStageState(std3D_pD3Device, 0, D3DTSS_MIPFILTER, d3dMipFilter == 1 ? D3DTFP_POINT : d3dMipFilter == 2 ? D3DTFP_LINEAR : D3DTFP_NONE);
 }
 
-// 0x0048b260 HOOK
+// 0x0048b260
 int std3D_SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane)
 {
     if (fabs(farPlane - nearPlane) < 0.009999999776482582)
@@ -695,7 +695,7 @@ int std3D_SetProjection(float fov, float aspectRatio, float nearPlane, float far
     return IDirect3DDevice3_SetTransform(std3D_pD3Device, D3DTRANSFORMSTATE_PROJECTION, (D3DMATRIX*)&proj_mat);
 }
 
-// 0x0048b4b0 HOOK
+// 0x0048b4b0
 void std3D_GetZBufferFormat(DDPIXELFORMAT* pPixelFormat)
 {
     if (std3D_pDirect3D == NULL || std3D_pCurDevice == NULL || pPixelFormat == NULL)
@@ -706,7 +706,7 @@ void std3D_GetZBufferFormat(DDPIXELFORMAT* pPixelFormat)
     IDirect3D3_EnumZBufferFormats(std3D_pDirect3D, &std3D_pCurDevice->duid, std3D_EnumZBufferFormatsCallback, pPixelFormat);
 }
 
-// 0x0048b500 HOOK
+// 0x0048b500
 HRESULT __stdcall std3D_EnumZBufferFormatsCallback(LPDDPIXELFORMAT lpDDPixFmt, void* lpContext)
 {
     if (lpDDPixFmt == NULL || lpContext == NULL)
@@ -719,7 +719,7 @@ HRESULT __stdcall std3D_EnumZBufferFormatsCallback(LPDDPIXELFORMAT lpDDPixFmt, v
     return 1;
 }
 
-// 0x0048ba20 HOOK
+// 0x0048ba20
 void std3D_AddTextureToCacheList(tSystemTexture* pTexture)
 {
     if (std3D_pFirstTexCache)
@@ -740,7 +740,7 @@ void std3D_AddTextureToCacheList(tSystemTexture* pTexture)
     std3D_pCurDevice->availableMemory -= pTexture->textureSize;
 }
 
-// 0x0048ba90 HOOK
+// 0x0048ba90
 void std3D_RemoveTextureFromCacheList(tSystemTexture* pCacheTexture)
 {
     if (pCacheTexture == std3D_pFirstTexCache)
@@ -778,7 +778,7 @@ void std3D_RemoveTextureFromCacheList(tSystemTexture* pCacheTexture)
     pCacheTexture->frameNum = 0;
 }
 
-// 0x0048bb50 HOOK
+// 0x0048bb50
 int std3D_PurgeTextureCache(unsigned int size)
 {
     if (std3D_pFirstTexCache == NULL)
@@ -820,7 +820,7 @@ int std3D_PurgeTextureCache(unsigned int size)
     return purged_size != 0;
 }
 
-// 0x0048bc10 HOOK
+// 0x0048bc10
 StdDisplayEnvironment* std3D_BuildDisplayEnvironment(void)
 {
     StdDisplayEnvironment* env = stdPlatform_hostServices.alloc(sizeof(StdDisplayEnvironment));
@@ -886,7 +886,7 @@ error:
     return NULL;
 }
 
-// 0x0048be20 HOOK
+// 0x0048be20
 void std3D_FreeDisplayEnvironment(StdDisplayEnvironment* pEnv)
 {
     if (pEnv->aDisplayInfos)

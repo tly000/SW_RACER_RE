@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include "globals.h"
 
-#include <Platform/cstdlib.h>
-
 // 0x00484880
 int stdCalcBitPos(signed int val)
 {

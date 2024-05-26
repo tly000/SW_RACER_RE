@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 
+#if 0
 // ctype.h
 #define _filelength_ADDR (0x004a04e0)
 #define _filelength c__filelength
@@ -281,4 +282,5 @@ int wctomb(char *s, wchar_t wc);
 #define wcstombs c_wcstombs
 size_t wcstombs(char *dst, const wchar_t *src, size_t len);
 
+#endif
 #endif // CSTDLIB_H

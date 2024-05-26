@@ -8,7 +8,7 @@
 #include <stdPlatform.h>
 #include <General/stdBmp.h>
 
-// 0x00487d20 HOOK
+// 0x00487d20
 int stdDisplay_Startup(void)
 {
     if (stdDisplay_bStartup)
@@ -29,7 +29,7 @@ int stdDisplay_Startup(void)
     return 1;
 }
 
-// 0x00487da0 HOOK
+// 0x00487da0
 void stdDisplay_Shutdown(void)
 {
     if (stdDisplay_bOpen)
@@ -45,7 +45,7 @@ void stdDisplay_Shutdown(void)
     stdDisplay_bStartup = 0;
 }
 
-// 0x00487e00 HOOK
+// 0x00487e00
 int stdDisplay_Open(int deviceNum)
 {
     if (stdDisplay_bOpen)
@@ -65,7 +65,7 @@ int stdDisplay_Open(int deviceNum)
     return 1;
 }
 
-// 0x00487e80 HOOK
+// 0x00487e80
 void stdDisplay_Close(void)
 {
     if (!stdDisplay_bStartup || !stdDisplay_bOpen)
@@ -84,7 +84,7 @@ void stdDisplay_Close(void)
     stdDisplay_bOpen = 0;
 }
 
-// 0x00487f00 HOOK
+// 0x00487f00
 int stdDisplay_SetMode(int modeNum, int bFullscreen)
 {
     if (bFullscreen && modeNum >= stdDisplay_numVideoModes)
@@ -121,7 +121,7 @@ int stdDisplay_SetMode(int modeNum, int bFullscreen)
     return 1;
 }
 
-// 0x00488030 HOOK
+// 0x00488030
 void stdDisplay_ClearMode(void)
 {
     if (stdDisplay_bModeSet)
@@ -134,13 +134,13 @@ void stdDisplay_ClearMode(void)
     stdDisplay_bModeSet = 0;
 }
 
-// 0x00488070 HOOK
+// 0x00488070
 int stdDisplay_GetNumDevices(void)
 {
     return stdDisplay_numDevices;
 }
 
-// 0x00488080 HOOK
+// 0x00488080
 int stdDisplay_GetDevice(unsigned int deviceNum, StdDisplayDevice* pDest)
 {
     if (deviceNum >= stdDisplay_numDevices)
@@ -150,7 +150,7 @@ int stdDisplay_GetDevice(unsigned int deviceNum, StdDisplayDevice* pDest)
     return 0;
 }
 
-// 0x00488100 HOOK
+// 0x00488100
 void stdDisplay_Refresh(int bReload)
 {
     if (!stdDisplay_bOpen || !stdDisplay_bModeSet || !bReload)
@@ -187,7 +187,7 @@ void stdDisplay_Refresh(int bReload)
         IDirectDrawSurface4_Restore(stdDisplay_zBuffer.pDDSurf);
 }
 
-// 0x004881c0 HOOK
+// 0x004881c0
 tVBuffer* stdDisplay_VBufferNew(tRasterInfo* texFormat, int create_ddraw_surface, int use_video_memory)
 {
     tVBuffer* buffer = stdPlatform_hostServices.alloc(sizeof(tVBuffer));
@@ -297,7 +297,7 @@ int stdDisplay_VBufferLock(tVBuffer* vbuffer)
     return 1;
 }
 
-// 0x004883c0 HOOK
+// 0x004883c0
 int stdDisplay_VBufferUnlock(tVBuffer* vbuffer)
 {
     int res;
@@ -326,7 +326,7 @@ int stdDisplay_VBufferUnlock(tVBuffer* vbuffer)
     return 1;
 }
 
-// 0x00488b00 HOOK
+// 0x00488b00
 int stdDisplay_InitDirectDraw(HWND wnd)
 {
     LPDIRECTDRAW lpDD = 0;
@@ -376,7 +376,7 @@ int stdDisplay_InitDirectDraw(HWND wnd)
     return 1;
 }
 
-// 0x00488d10 HOOK
+// 0x00488d10
 void stdDisplay_ReleaseDirectDraw(void)
 {
     if (stdDisplay_lpDD)
@@ -390,7 +390,7 @@ void stdDisplay_ReleaseDirectDraw(void)
     stdDisplay_numVideoModes = 0;
 }
 
-// 0x00489260 HOOK
+// 0x00489260
 LPDIRECTDRAW4 stdDisplay_GetDirectDraw(void)
 {
     return stdDisplay_lpDD;
@@ -491,7 +491,7 @@ int stdDisplay_Update(void)
     HANG("TODO");
 }
 
-// 0x00489bc0 HOOK
+// 0x00489bc0
 void stdDisplay_FillMainSurface(void)
 {
     if (stdDisplay_FillMainSurface_ptr != NULL)
@@ -504,25 +504,25 @@ int stdDisplay_ColorFillSurface(tVSurface* pSurf, DWORD dwFillColor, LECRECT* lp
     HANG("TODO");
 }
 
-// 0x00489cd0 HOOK
+// 0x00489cd0
 int stdDisplay_BackBufferFill(uint8_t r, uint8_t b, uint8_t g, LECRECT* lpRect)
 {
     return stdDisplay_ColorFillSurface(&stdDisplay_g_backBuffer.pVSurface, (g >> 3) | (8 * (b & 0xFC | (32 * (r & 0xF8)))), lpRect);
 }
 
-// 0x00489d20 HOOK
+// 0x00489d20
 int stdDisplay_SaveScreen(char* pFilename)
 {
     return stdBmp_VBufferToBmp(pFilename, &stdDisplay_g_backBuffer);
 }
 
-// 0x00489d40 HOOK
+// 0x00489d40
 int stdDisplay_GetNumVideoModes(void)
 {
     return stdDisplay_numVideoModes;
 }
 
-// 0x00489d50 HOOK
+// 0x00489d50
 int stdDisplay_CopyVideoMode(size_t modeNum, StdVideoMode* pDestMode)
 {
     if (modeNum >= stdDisplay_numVideoModes)
@@ -532,7 +532,7 @@ int stdDisplay_CopyVideoMode(size_t modeNum, StdVideoMode* pDestMode)
     return 0;
 }
 
-// 0x00489d90 HOOK
+// 0x00489d90
 int stdDisplay_CopyCurrentVideoMode(StdVideoMode* pDisplayMode)
 {
     if (!stdDisplay_pCurVideMode)

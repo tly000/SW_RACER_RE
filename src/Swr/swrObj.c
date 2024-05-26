@@ -610,14 +610,14 @@ void swrObjTrig_LoadAndInitializeTriggerModels(int planet_id, int a2, swrModel_N
     HANG("TODO");
 }
 
-// 0x0047E760 HOOK
+// 0x0047E760
 void swrObjTrig_AddTriggerDescription(swrModel_TriggerDescription* trigger)
 {
     if ((trigger != NULL) && (swrObjTrig_NumTriggerDescriptions < 200))
         swrObjTrig_TriggerDescriptionArray[swrObjTrig_NumTriggerDescriptions++] = trigger;
 }
 
-// 0x0047E790 HOOK
+// 0x0047E790
 int swrObjTrig_FindTriggerDescriptionIndex(swrModel_TriggerDescription* trigger)
 {
     for (int i = 0; i < swrObjTrig_NumTriggerDescriptions; i++)
@@ -627,7 +627,7 @@ int swrObjTrig_FindTriggerDescriptionIndex(swrModel_TriggerDescription* trigger)
     return -1;
 }
 
-// 0x0047E7C0 HOOK
+// 0x0047E7C0
 swrModel_TriggerDescription* swrObjTrig_GetTriggerDescription(int index)
 {
     if (index < 0 || index >= swrObjTrig_NumTriggerDescriptions)
