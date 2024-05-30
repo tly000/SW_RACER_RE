@@ -580,7 +580,7 @@ extern "C"
         int unk1e64_flag;
         int unk1e68_flag;
         int unk1e6c;
-        struct swrScore * score_ptr;
+        struct swrScore* score_ptr;
         char unk1e74[64];
         int unk1eb4;
         char unk1eb8[64];
@@ -627,7 +627,7 @@ extern "C"
         struct swrModel_Animation* unk40_animation;
         struct swrModel_Animation* unk44_animation;
         struct swrModel_Node* unk48_node;
-        struct swrModel_TriggerDescription * trigger_description;
+        struct swrModel_TriggerDescription* trigger_description;
         rdMatrix44* test_obj_transform_ptr;
         struct swrModel_Material* model_material;
     } swrObjTrig; // sizeof(0x58)
@@ -1055,7 +1055,7 @@ extern "C"
         float results_P1_Lap;
         int unk7c;
         float lastRaceDamage;
-        swrRace * obj_test_ptr;
+        swrRace* obj_test_ptr;
     } swrScore; // sizeof(0x88)
 
     typedef struct swrCamera_unk
@@ -1189,7 +1189,7 @@ extern "C"
     // this could be some kind of viewport struct.
     typedef struct swrViewport // ~ cMan
     {
-        unsigned int flag;  // bit 1 set if unkCameraIndex is valid.
+        unsigned int flag; // bit 1 set if unkCameraIndex is valid.
         int unkCameraIndex; // index into swrCamera_unk* unkCameraArray (0x004B91C4)
         int unk8;
         int unkc;
@@ -1486,15 +1486,15 @@ extern "C"
         rdVector3 direction;
         float size_xy;
         float size_z;
-        swrModel_Node * affected_node;
-        uint16_t type;  // number defining different trigger types
+        swrModel_Node* affected_node;
+        uint16_t type; // number defining different trigger types
         uint16_t flags; // 0x1: enabled
                         // 0x2: player must have > 150 speed
                         // 0x4: skip trigger on lap 1
                         // 0x8: skip trigger on lap 2
                         // 0x10: skip trigger on lap 3
                         // 0x20: not triggered by AI
-        struct swrModel_TriggerDescription * next;
+        struct swrModel_TriggerDescription* next;
     } swrModel_TriggerDescription;
 
 #pragma pack(pop)
@@ -3047,17 +3047,19 @@ extern "C"
         swrSplineControlPoint* control_points;
     } swrSpline;
 
-    struct swrUpgradeInfo{
+    struct swrUpgradeInfo
+    {
         uint8_t id; // 0x0
         uint8_t level; // 0x1
         uint8_t unk2; // 0x2
         uint8_t type; // 0x3
         uint32_t unk4; // 0x4
         MODELID model; // 0x8
-        const char * name; // 0xc
+        const char* name; // 0xc
     };
 
-    struct swrUIUpgradeInfo{
+    struct swrUIUpgradeInfo
+    {
         uint8_t index; // 0x0
         uint8_t health; // 0x1
         uint8_t unk2; // 0x2
@@ -3069,12 +3071,75 @@ extern "C"
     };
 
     // actual usage of this struct unclear, maybe camera positions on junkyard
-    struct swrUICameraPlacement{
+    struct swrUICameraPlacement
+    {
         rdVector3 position1; // 0x0
         rdVector3 position2; // 0xc
         uint32_t unk1; // 0x18
         uint32_t unk2; // 0x1c
     };
+
+    // This data follows the 4 byte magic in the savegames (from data/player/*.sav)
+    // They come from 0xE364B4 in memory
+    typedef struct swrSaveData
+    {
+        char profileName[32]; // 0x00, size correct?
+        uint8_t unk1[4]; // 0x20
+        uint8_t last_podracer; // 0x24 value:
+        //   0x01 = Anakin Skywalker ??? Probably 0x00. Teemto somethingsomething seems to be 0x01
+        //   0x09 = Ebe Endocott
+        //   0x0A = Dud Bolt
+        //   0x0B = Gasgano
+
+        uint8_t race_unlocked[5]; // 0x25 1 bit per course starting at LSb: unlocks race
+        uint16_t race_status[5]; // 0x2A 2 bit per course starting at LSb: 0=4th (or not finished), 1=3rd, 2=2nd, 3=1st.
+
+        uint8_t podracers_unlocked[4]; // 0x34 1 bit per podracer ???
+
+        uint32_t truguts; // 0x38
+
+        uint8_t unk2[4]; // 0x3C
+
+        uint8_t pit_droid_count; // 0x40
+
+        // Parts, in same order as shown in menu (probably)
+        uint8_t part_index[7]; // 0x41
+        uint8_t part_health[7]; // 0x48
+
+        uint8_t unk3; // 0x4F seems to be zero; padding only?
+
+        // 80 bytes
+    } swrSaveData;
+
+    // This data follows the 4 byte magic in data/player/tgfd.dat)
+    // They come from 0xE364A0 in memory
+    typedef struct swrTGFDData
+    {
+        uint32_t unk1[3];
+        uint8_t race_unlocked[4]; // 0xC 1 bit per course starting at LSb: unlocks race for freeplay
+        uint8_t podracer_unlocked[4]; // 0x10 1 bit per podracer ??? for freeplay
+        swrSaveData profiles[4]; // 0x14 4 profiles, but the first profile seems to be the one used for most things
+
+        // This keeps track of the best times.
+        // Out of the 100 entries, there seem to be always group of times.
+        //
+        // Starting at index 0: 3 laps
+        // Starting at index 50: 1 lap [best lap]
+        //
+        // The mapping from track select screen to times is not yet known
+        //
+        // Element 0 is the boonta training course [3 laps].
+        // Element 50 the boonta training course [best lap]
+        // Element 88 is abyss [best lap]
+        //
+        float time_seconds[100]; // 0x154 default value seems to be 3599.9899902344 (0x4560FFD7) which is about an hour
+        char time_names[100][32]; // 0x2E4 default value seems to be 0x41 ('A')
+        uint8_t time_podracer[100]; // 0xF64 default value seems to be the track favorite
+
+        uint8_t unk2[12]; // 0xFC8
+
+        // 4052 bytes
+    } swrTGFDData;
 
 #ifdef __cplusplus
 }
