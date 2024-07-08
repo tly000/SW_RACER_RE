@@ -669,7 +669,7 @@ extern "C"
         char num_local_players;
         char unk71;
         char num_players; // counts local players and AI
-        char unk73[23];
+        char pilot_per_player[23];
         char unk8a[5];
         char numLaps; // 0x8f
         char AISpeed; // 0x90
@@ -1036,9 +1036,7 @@ extern "C"
         float time_unk;
         int identifier; // AAll, Locl
         int flag;
-        char unkc;
-        char unkd;
-        char unke[2];
+        struct swrSaveData* profile;
         int unk10;
         int unk14;
         int unk18;
@@ -3140,6 +3138,26 @@ extern "C"
 
         // 4052 bytes
     } swrTGFDData;
+
+    struct swrControl_FunctionDescription
+    {
+        int id; // 0x0
+        const char* name; // 0x4
+        int otherId; // 0x8 some kind of flag/bitset
+    };
+
+    struct swrControl_KeyDescription
+    {
+        int id; // 0x0
+        const char* name; // 0x4
+    };
+
+    struct swrControl_InputMapping
+    {
+        uint32_t flags; // 0x0
+        uint32_t input_index; // 0x4 key/axis index of the device
+        uint32_t output_index; // 0x8 key/axis index in the output mapping, i.e. "id" in swrControl_FunctionDescription or position in swrControl_AxisInput, swrControl_ButtonInput
+    };
 
 #ifdef __cplusplus
 }

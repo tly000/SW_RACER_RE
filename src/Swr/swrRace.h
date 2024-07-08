@@ -72,6 +72,8 @@
 
 #define swrRace_BoostCharge_ADDR (0x0046bd20)
 
+#define swrRace_HandleInputs_ADDR (0x0046BEC0)
+
 #define swrRace_CalculateTiltFromTurn_ADDR (0x00477ad0)
 
 #define swrRace_TakeDamage_ADDR (0x00474cd0)
@@ -173,7 +175,8 @@ void swrRace_UpdateSurfaceTag(swrRace* test);
 
 void swrRace_ApplyGravity(swrRace* player, float* a, float b);
 
-int swrRace_BoostCharge(int player);
+int swrRace_BoostCharge(swrRace* player);
+void  swrRace_HandleInputs(swrRace *player);
 
 void swrRace_CalculateTiltFromTurn(int pEngine, rdVector4* pXformZ, float ZMotion, rdVector3* pRDot);
 

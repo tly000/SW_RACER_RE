@@ -818,10 +818,16 @@ void swrRace_ApplyGravity(swrRace* player, float* a, float b)
 }
 
 // 0x0046bd20
-int swrRace_BoostCharge(int player)
+int swrRace_BoostCharge(swrRace* player)
 {
     // TODO
     return 0;
+}
+
+// 0x0046BEC0
+void swrRace_HandleInputs(swrRace* player)
+{
+    HANG("TODO");
 }
 
 // 0x00477ad0

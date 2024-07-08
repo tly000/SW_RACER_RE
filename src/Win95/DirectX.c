@@ -41,7 +41,7 @@ void DirectDraw_UnlockZBuffer(void)
 }
 
 // 0x00486a10
-int DirectInput_EnumDevice_Callback(DIDEVICEINSTANCEA* deviceInstance)
+int __stdcall DirectInput_EnumDevice_Callback(DIDEVICEINSTANCEA* deviceInstance, void* user_data)
 {
     HANG("TODO");
     return 1;

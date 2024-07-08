@@ -37,6 +37,9 @@ rdMatrix34_identity 0x004af880 rdMatrix34 = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {
 swrConfig_currentInputDeviceType 0x004b2030 swrConfig_DEVICE
 
 swrTextFmtString1 0x004b2304 char[4] = "%s\0\0"
+
+swrModel_CollisionFlagsAnyMatch 0x004C177C int
+
 swrTextFmtString2 0x004c3e48 char[8] = "~f%d%s\0\0"
 
 maybeUICameraPlacements 0x004C4010 swrUICameraPlacement[40]
@@ -45,10 +48,19 @@ swrConfig_joystick_enabled 0x004b2944 int = 1
 swrConfig_keyboard_enabled 0x004b2948 int = 1
 joystick_detected 0x004b294c int = 1
 
-keyMapping2_0 0x004b29e8 keyMapping2[22]
-keyMapping0 0x004b2af0 keyMapping[7]
-keyMapping1 0x004b2b28 keyMapping[21]
-keyMapping2 0x004b2bd0 keyMapping[118]
+swrConfig_DefaultJoystickAxisInverted 0x004B2958 int[6]
+swrConfig_DefaultMouseAxisInverted 0x004B2970 int[3]
+swrControl_DefaultDeadzone 0x004B297C float
+swrControl_JoystickAxisScales 0x004B2980 float[6]
+iternalInputMapping 0x004B2998 int[16]
+internalButtonEnabled 0x004B29D8 char[16]
+swrControl_FunctionDescriptions 0x004B29E8 swrControl_FunctionDescription[22]
+swrControl_AxisDescriptions 0x004B2AF0 swrControl_KeyDescription[7]
+swrControl_ButtonDescriptions 0x004B2B28 swrControl_KeyDescription[21]
+swrControl_KeyDescriptions 0x004B2BD0 swrControl_KeyDescription[118]
+
+swrControl_ButtonInputsByteSize 0x004B38AC None
+swrControl_AxisInputsByteSize 0x004B38B0 None
 
 swrConfig_aControlKeyStrings 0x004b38b8 char[17][4] # More than that
 
@@ -215,11 +227,20 @@ KeyboardButtonPressedInput 0x4d5ef8 float[15]
 
 swrText_keyNameText 0x004d5f38 char[128]
 
+swrControl_JoystickMapping 0x004D5FC0 swrControl_InputMapping[64]
+swrControl_PrevJoystickAxisXInput 0x004D62D0 float[6]
+swrControl_PrevMouseAxisInputs 0x004D62E8 float[3]
+
 WindowsInputStack 0x004d6310 WindowsInputItem[64]
+
+swrControl_MouseMapping 0x004D6518 swrControl_InputMapping[64]
+swrControl_KeyboardMapping 0x004D6828 swrControl_InputMapping[64]
 
 swrConfig_mouse_enabled 0x004d6b38 int
 stdControl_joystickDeviceIndex 0x004d6b3c int
 enableWindowInput 0x004D6B54 int
+
+swrControl_AccumulatedMouseAxisInputs 0x004D6B60 float[3]
 
 rdLight_1 0x004d6b78 rdLight
 rdLight_2 0x004d6ba8 rdLight
@@ -371,6 +392,8 @@ rdroid_g_curRenderOptions2 0x0050c530 RdroidFlags
 swrRace_TournamentTrugutGain 0x0050c53c int
 
 nb_AI_racers 0x0050c558 int # g_uNumRacers
+
+swrModel_CollisionFlagsExactMatch 0x0050C5DC int
 
 rdMatrixStack44_size 0x0050c5e8 int
 
@@ -875,10 +898,12 @@ texture_count 0x00e9823c unsigned int
 
 InRace_PauseMenu_ScrollInOut 0x00e9824c float
 
-ingameLocalPlayerInputBitset3 0x00E98E90 int[4]
-
-ingameLocalPlayerInputBitset1 0x00E98EB0 int[4]
-ingameLocalPlayerInputBitset2 0x00E98EC0 int[4]
+localPlayerForwardAxisInput 0x00E98E80 float[4]
+localPlayerInputDownBitset 0x00E98E90 int[4]
+localPlayerTurnAxisInput 0x00E98EA0 float[4]
+localPlayerInputPressedBitset 0x00E98EB0 int[4]
+localPlayerInputReleasedBitset 0x00E98EC0 int[4]
+internalInputData 0x0000E98EE0 char[96] # 24 bytes per local player
 
 swrModel_meshCollisionFaceCallbackIndexed 0x00E985AC void(*)(swrModel_CollisionVertex*,int16_t,uint16_t*)
 
@@ -1030,20 +1055,24 @@ Deadzone 0x00ec876c float
 swrConfig_mouseNbButtons 0x00ec8770 int
 
 swrConfig_mouseNbAxis 0x00ec878c int
-flip_x_axis 0x00ec8790 int
-flip_y_axis 0x00ec8794 int
-flip_z_axis 0x00ec8798 int
+swrControl_MouseAxisInverted 0x00EC8790 int[3]
 swrConfig_joystickNbButtons 0x00ec879c int
 swrConfig_joystickNbAxis 0x00ec87a0 int
 
-swrRace_ThrottleInput 0x00ec8830 float
-swrRace_UnkInput 0x00ec8834 float
-swrRace_SteeringInput 0x00ec8838 float
-swrRace_PitchInput 0x00ec883c float
+swrControl_JoystickAxisInputs 0x00EC87C0 float[6]
+swrControl_MouseAxisInputs 0x00EC87D8 float[3]
+swrControl_KeyboardAxisInputs 0x00EC87F0 float[3]
 
-swrRace_ThrustInput 0x00ec884c float
-swrRace_BoostInput 0x00ec8850 float
+swrControl_MouseAxisBitset 0x00EC8808 int
+swrControl_ButtonPressed 0x00EC8810 char[15]
 
+swrControl_BrakeInputDown 0x00EC8820 int
+
+swrControl_AxisInput 0x00EC8830 float[4]
+swrControl_ButtonInput 0x00EC8840 float[15]
+swrControl_JoystickAxisBitset 0x00EC887C int
+swrControl_JoystickAxisInverted 0x00EC8880 int[6]
+swrControl_ButtonDownTime 0x00EC88A0 float[15]
 stdControl_KeyPressed_unused 0x00ec88e0 char[0x100]
 
 stdControlInputItems 0x00ec89e4 stdControlInputItem[64]

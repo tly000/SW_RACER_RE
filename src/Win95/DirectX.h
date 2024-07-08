@@ -51,7 +51,7 @@ void DirectDraw_BlitProgressBar(int progress);
 void DirectDraw_LockZBuffer(uint32_t *bytes_per_depth_value, LONG *pitch, LPVOID *data, float *near, float *far);
 void DirectDraw_UnlockZBuffer(void);
 
-int DirectInput_EnumDevice_Callback(DIDEVICEINSTANCEA* deviceInstance);
+int __stdcall DirectInput_EnumDevice_Callback(DIDEVICEINSTANCEA* deviceInstance, void* user_data);
 
 BOOL DirectPlay_Startup(void);
 
