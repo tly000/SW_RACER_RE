@@ -10,6 +10,7 @@
 #include <fstream>
 #include <map>
 #include <thread>
+#include <vector>
 #include <windows.h>
 
 #include "globals.h"
@@ -27,11 +28,14 @@
 extern "C" {
 #include <Engine/rdCamera.h>
 #include <Engine/rdCanvas.h>
+#include <General/utils.h>
+#include <Main/swrControl.h>
 #include <Raster/rdCache.h>
 #include <Swr/swrEvent.h>
 #include <Swr/swrRace.h>
 #include <Swr/swrRender.h>
 #include <Swr/swrViewport.h>
+#include <Win95/DirectX.h>
 #include <Win95/Window.h>
 #include <Win95/stdConsole.h>
 #include <Win95/stdDisplay.h>
@@ -49,7 +53,7 @@ LRESULT CALLBACK WndProc(HWND wnd, UINT code, WPARAM wparam, LPARAM lparam) {
     if (ImGui_ImplWin32_WndProcHandler(wnd, code, wparam, lparam))
         return 1;
 
-    return WndProcOrig(wnd, code, wparam, lparam);
+    return CallWindowProcA(WndProcOrig, wnd, code, wparam, lparam);
 }
 
 static bool imgui_initialized = false;
@@ -131,11 +135,12 @@ int stdDisplay_Update_Hook() {
                     ImGui::GetIO().DeltaTime * 1000);
 
         for (int i = 0; i < 4; i++) {
-            ImGui::Text("Local player %d UI_down=%08x UI_pressed=%08x ingame_1=%08x ingame_2=%08x "
-                        "ingame_3=%08x",
+            ImGui::Text("Local player %d UI_down=%08x UI_pressed=%08x down=%08x pressed=%08x "
+                        "released=%08x forward=%f turn=%f",
                         i, swrUI_localPlayersInputDownBitset[i],
-                        swrUI_localPlayersInputPressedBitset[i], ingameLocalPlayerInputBitset1[i],
-                        ingameLocalPlayerInputBitset2[i], ingameLocalPlayerInputBitset3[i]);
+                        swrUI_localPlayersInputPressedBitset[i], localPlayerInputDownBitset[i],
+                        localPlayerInputPressedBitset[i], localPlayerInputReleasedBitset[i],
+                        localPlayerForwardAxisInput[i], localPlayerTurnAxisInput[i]);
         }
         auto judge = (swrObjJdge *) swrEvent_GetItem('Jdge', 0);
         if (judge) {
@@ -143,20 +148,12 @@ int stdDisplay_Update_Hook() {
         }
 
         if (hang) {
-            static bool first = true;
-            if (first) {
-                first = false;
+            int num_players = hang->num_local_players;
+            if (ImGui::SliderInt("num players", &num_players, 1, 4))
+                hang->num_local_players = num_players;
 
-                char *patch_pos = (char *) 0x45B833;
-                DWORD old_protect;
-                VirtualProtect(patch_pos, 4, PAGE_EXECUTE_READWRITE, &old_protect);
-                memset(patch_pos, 0x90, 4);
-            }
-
-            bool two_players = hang->num_local_players == 2;
-            if (ImGui::Checkbox("2 Player", &two_players)) {
-                hang->num_local_players = two_players ? 2 : 1;
-            }
+            for (int i = 0; i < hang->num_local_players; i++)
+                ImGui::Text("Player %d selected pilot %d", i, hang->pilot_per_player[i]);
         }
 
         for (int i = 0; i < 4; i++) {
@@ -171,11 +168,18 @@ int stdDisplay_Update_Hook() {
         int num_test_objs = swrEvent_GetEventCount('Test');
         for (int i = 0; i < num_test_objs; i++) {
             auto test_obj = (swrRace *) swrEvent_GetItem('Test', i);
-            ImGui::Text("Test %d: obj.flags=%x flags0=%x flags1=%x", i, test_obj->obj.flags,
-                        test_obj->flags0, test_obj->flags1);
+            ImGui::Text("Test %d: obj.flags=%x flags0=%x flags1=%x score_ptr->unk10=%x "
+                        "score_ptr->profile->unk1[3]=%d",
+                        i, test_obj->obj.flags, test_obj->flags0, test_obj->flags1,
+                        test_obj->score_ptr->unk10 & 0xFF,
+                        test_obj->score_ptr->profile ? test_obj->score_ptr->profile->unk1[3] : -1);
         }
-        ImGui::End();
 
+        for (int i = 0; i < 15; i++) {
+            ImGui::Text("Button %d time: %f", i, swrControl_ButtonDownTime[i]);
+        }
+
+        ImGui::End();
         // Rendering
         ImGui::EndFrame();
 
@@ -200,6 +204,9 @@ static POINT virtual_cursor_pos{-100, -100};
 
 int stdConsole_GetCursorPos_Hook(int *out_x, int *out_y) {
     if (!out_x || !out_y)
+        return 0;
+
+    if (!imgui_initialized)
         return 0;
 
     const auto &io = ImGui::GetIO();
@@ -240,23 +247,24 @@ void update_camera(const swrViewport &viewport) {
     rdCamera_Update(&mat);
 }
 
-void swrViewport_Render_Hook(int x) {
-    auto &viewport = swrViewport_array[x];
+const static int viewport_per_local_player_num[][5][4]{
+    {{0, 0, 320, 240}, {0, 0, 320, 240}},
+    {{0, 0, 320, 240}, {0, 0, 320, 120}, {0, 120, 320, 240}},
+    //{{0, 0, 320, 240}, {0, 0, 160, 120}, {160, 0, 320, 120}, {0, 120, 160, 240}, {160, 120, 320, 240}},
+    //{{0, 0, 320, 240}, {0, 0, 160, 120}, {160, 0, 320, 120}, {0, 120, 160, 240}, {160, 120, 320, 240}},
+};
+
+void swrViewport_Render_Hook(int viewport_index) {
+    auto &viewport = swrViewport_array[viewport_index];
     auto cur_canvas = rdCamera_pCurCamera->canvas;
 
     const bool in_race = swrEvent_GetEventCount('Test') != 0;
-    if (in_race && numLocalPlayers == 2) {
-        if (x == 1) {
-            viewport.viewport_x1 = 0;
-            viewport.viewport_y1 = 0;
-            viewport.viewport_x2 = 320;
-            viewport.viewport_y2 = 120;
-        } else if (x == 2) {
-            viewport.viewport_x1 = 0;
-            viewport.viewport_y1 = 120;
-            viewport.viewport_x2 = 320;
-            viewport.viewport_y2 = 240;
-        }
+    if (in_race) {
+        const auto &v = viewport_per_local_player_num[numLocalPlayers - 1][viewport_index];
+        viewport.viewport_x1 = v[0];
+        viewport.viewport_y1 = v[1];
+        viewport.viewport_x2 = v[2];
+        viewport.viewport_y2 = v[3];
     } else {
         viewport.viewport_x1 = 0;
         viewport.viewport_y1 = 0;
@@ -302,7 +310,7 @@ void swrViewport_Render_Hook(int x) {
     auto canvas = rdCanvas_New(1, &stdDisplay_g_backBuffer, v_x0, v_y0, v_x1, v_y1);
     rdCamera_SetCanvas(rdCamera_pCurCamera, canvas);
 
-    hook_call_original(swrViewport_Render, x);
+    hook_call_original(swrViewport_Render, viewport_index);
     rdCamera_SetCanvas(rdCamera_pCurCamera, cur_canvas);
     rdCanvas_Free(canvas);
 
@@ -325,16 +333,16 @@ int KeyDownForPlayer1Or2_Hook(int key_bitset) {
         return 0;
 
     if (numLocalPlayers <= 1)
-        return ingameLocalPlayerInputBitset1[0] & key_bitset;
+        return localPlayerInputPressedBitset[0] & key_bitset;
 
     if (pauseState)
-        return key_bitset & ingameLocalPlayerInputBitset1[playerNumberInitiatingPause];
+        return key_bitset & localPlayerInputPressedBitset[playerNumberInitiatingPause];
 
-    if (ingameLocalPlayerInputBitset1[0] & key_bitset) {
+    if (localPlayerInputPressedBitset[0] & key_bitset) {
         playerNumberInitiatingPause = 0;
         return 1;
     }
-    if (ingameLocalPlayerInputBitset1[1] & key_bitset) {
+    if (localPlayerInputPressedBitset[1] & key_bitset) {
         playerNumberInitiatingPause = 1;
         return 1;
     }
@@ -347,17 +355,20 @@ float speedDialPositions2[2]{};
 void swrSprite_Draw1_Hook(swrSpriteTexture *a1, int16_t a2, int16_t a3, float a4, float a5,
                           float angle, int16_t a7, int16_t a8, int a9, uint8_t r, uint8_t g,
                           uint8_t b, uint8_t a) {
-    int player_number = 0;
-    if (a1 == swrSprite_array[19].texture) {
-        a1 = swrSpriteTexture_dial_gradient_rgb;
-        player_number = 1;
-    } else if (a1 == swrSprite_array[20].texture) {
-        a1 = swrSpriteTexture_dial_gradient_rgb2;
-        player_number = 1;
+    const bool in_race = swrEvent_GetEventCount('Test') != 0;
+    if (in_race) {
+        int player_number = 0;
+        if (a1 == swrSprite_array[19].texture) {
+            a1 = swrSpriteTexture_dial_gradient_rgb;
+            player_number = 1;
+        } else if (a1 == swrSprite_array[20].texture) {
+            a1 = swrSpriteTexture_dial_gradient_rgb2;
+            player_number = 1;
+        }
+        speedDialPosition1 = speedDialPositions1[player_number];
+        speedDialPosition2 = speedDialPositions2[player_number];
     }
 
-    speedDialPosition1 = speedDialPositions1[player_number];
-    speedDialPosition2 = speedDialPositions2[player_number];
     hook_call_original(swrSprite_Draw1, a1, a2, a3, a4, a5, angle, a7, a8, a9, r, g, b, a);
 }
 
@@ -366,6 +377,140 @@ void swrRace_InRaceTimer_Hook(swrScore *param_1, swrObjJdge *param_2) {
     const int player_number = param_1 == secondLocalPlayer ? 1 : 0;
     speedDialPositions1[player_number] = speedDialPosition1;
     speedDialPositions2[player_number] = speedDialPosition2;
+}
+
+auto store_state(auto &...vars) {
+    return std::make_tuple(std::make_pair(&vars, vars)...);
+}
+
+auto copy_current_state(const auto &backup) {
+    return std::apply(
+        [](const auto &...elems) {
+            return std::make_tuple(std::make_pair(elems.first, *elems.first)...);
+        },
+        backup);
+}
+
+auto restore_state(const auto &backup) {
+    std::apply([](const auto &...elems) { ((*elems.first = elems.second), ...); }, backup);
+}
+
+auto second_player_input_state =
+    store_state(*(std::array<float, 4> *) &swrControl_AxisInput,
+                *(std::array<float, 15> *) &swrControl_ButtonInput,
+                *(std::array<float, 15> *) &swrControl_ButtonDownTime,
+                *(std::array<char, 15> *) &swrControl_ButtonPressed, swrControl_BrakeInputDown,
+                swrControl_ConfirmKeyDown, swrControl_ConfirmKeyNotDown,
+                swrControl_ConfirmKeyJustPressed, swrControl_ConfirmKeyJustReleased,
+                swrControl_AbortKeyDown, swrControl_AbortKeyNotDown, swrControl_AbortKeyJustPressed,
+                swrControl_AbortKeyJustReleased, swrControl_ConfirmKeyDownButNotMouse,
+                swrControl_ConfirmKeyButNotMouseJustPressed, swrControl_MaybeMouseDisabledInUI);
+
+void swrControl_ProcessInputs_Hook() {
+    /*auto hang = (const swrObjHang *) swrEvent_GetItem('Hang', 0);
+    if (!hang || hang->num_local_players <= 1) {
+        hook_call_original(swrControl_ProcessInputs);
+        return;
+    }
+
+    if (hang->num_local_players != 2)
+        std::abort();*/
+
+    auto last_read_time = stdControl_lastReadTime;
+
+    const auto input_config_backup = store_state(
+        DirectInputNbKeyboard, DirectInputNbMouses, stdControl_numJoystickDevices,
+        swrConfig_keyboard_enabled, swrConfig_mouse_enabled, swrConfig_joystick_enabled);
+
+    const auto input_state = copy_current_state(second_player_input_state);
+
+    restore_state(second_player_input_state);
+    // second player input first, disable mouse and keyboard input
+    DirectInputNbKeyboard = 0;
+    DirectInputNbMouses = 0;
+    swrConfig_keyboard_enabled = false;
+    swrConfig_mouse_enabled = false;
+    stdControl_numJoystickDevices = 1;
+
+    hook_call_original(swrControl_ProcessInputs);
+    // copy internalInputData to second player, this will make sure that the local player input
+    // bitsets are created correctly.
+    std::memcpy(internalInputData + 24, internalInputData, 24);
+    // copy input state:
+    second_player_input_state = copy_current_state(second_player_input_state);
+
+    restore_state(input_state);
+
+    // first player afterwards, this way all global vars should be set as if nothing happened,
+    // (hopefully...)
+    stdControl_lastReadTime = last_read_time;
+    stdControl_numJoystickDevices = 0;
+    swrConfig_joystick_enabled = false;
+    swrConfig_keyboard_enabled = true;
+    DirectInputNbKeyboard = 1;
+    DirectInputNbMouses = 0;
+    hook_call_original(swrControl_ProcessInputs);
+
+    restore_state(input_config_backup);
+}
+
+void swrRace_HandleInputs_Hook(swrRace *player) {
+    const int player_index = GetLocalPlayerNumberFromScore(player->score_ptr);
+    // this value defines which of the localPlayerInputBitsets is used.
+    *(uint8_t *) &player->score_ptr->unk10 = player_index;
+
+    if (player_index == 0) {
+        hook_call_original(swrRace_HandleInputs, player);
+        return;
+    }
+
+    if (player_index != 1)
+        std::abort();
+
+    // copy the current input state
+    auto input_state = copy_current_state(second_player_input_state);
+    // replace it by the second player input state
+    restore_state(second_player_input_state);
+
+    hook_call_original(swrRace_HandleInputs, player);
+
+    // restore state by original input state
+    restore_state(input_state);
+}
+
+swrScore *swrObjHang_PreparePlayerPodData_Hook(swrObjHang *hang, int a2) {
+    // select pilot per player
+    uint32_t pilot_bitset = 0xFFFFFFF;
+
+    // disallow pilots selected by local players
+    for (int i = 0; i < hang->num_local_players; i++)
+        pilot_bitset &= ~(1 << hang->pilot_per_player[i]);
+
+    const int first_ai_index = hang->num_local_players;
+    if (first_ai_index < hang->num_players) {
+        int rest_ai_index = first_ai_index;
+        const int favorite_pilot = g_aTrackInfos[hang->track_index].FavoritePilot;
+        if (pilot_bitset & (1 << favorite_pilot)) {
+            // favorite pilot not selected by local players.
+            hang->pilot_per_player[first_ai_index] = favorite_pilot;
+            pilot_bitset &= ~(1 << favorite_pilot);
+            rest_ai_index++;
+        }
+
+        // fill the rest of the AI with random pilots
+        for (; rest_ai_index < hang->num_players; rest_ai_index++) {
+            while (true) {
+                const int pilot = swrUtils_Rand() * 4.6566129e-10 * 23.0;
+                if (pilot_bitset & (1 << pilot)) {
+                    hang->pilot_per_player[rest_ai_index] = pilot;
+                    pilot_bitset &= ~(1 << pilot);
+                    break;
+                }
+            }
+        }
+    }
+
+    return hook_call_original(swrObjHang_PreparePlayerPodData, hang, a2);
 }
 
 extern "C" HRESULT WINAPI DirectDrawCreateHook(GUID *guid, LPDIRECTDRAW *dd, IUnknown *unk);
@@ -387,6 +532,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
     hook_replace(KeyDownForPlayer1Or2, KeyDownForPlayer1Or2_Hook);
     hook_replace(swrSprite_Draw1, swrSprite_Draw1_Hook);
     hook_replace(swrRace_InRaceTimer, swrRace_InRaceTimer_Hook);
+    hook_replace(swrControl_ProcessInputs, swrControl_ProcessInputs_Hook);
+    hook_replace(swrRace_HandleInputs, swrRace_HandleInputs_Hook);
+    hook_replace(swrObjHang_PreparePlayerPodData, swrObjHang_PreparePlayerPodData_Hook);
     init_hooks();
 
     DWORD old_protect;
@@ -394,5 +542,16 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
     IPX_GUID = TCPIP_GUID;
     //*(uint32_t *) 0x4B79FC =
     //    0;// disable cd check function (makes the game portable, skips some registry checks)
+
+    //
+
+    // removes code that forces the number of local players to 1, assigns the favorite pilot to
+    // player 2 and then random pilots to the other players. this code needs to be reimplemented
+    // correctly for multiple local players.
+    char *patch_pos = (char *) 0x45B833;
+    char *patch_end = (char *) 0x45B8BC;
+    VirtualProtect(patch_pos, patch_end - patch_pos, PAGE_EXECUTE_READWRITE, &old_protect);
+    memset(patch_pos, 0x90, patch_end - patch_pos);
+
     return TRUE;
 }
