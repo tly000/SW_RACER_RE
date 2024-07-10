@@ -224,21 +224,30 @@ WindowsInputCritSection 0x004D5E68 CRITICAL_SECTION
 JoystickButtonPressedInput 0x4d5e80 float[15]
 MouseButtonPressedInput 0x4d5ebc float[15]
 KeyboardButtonPressedInput 0x4d5ef8 float[15]
-
 swrText_keyNameText 0x004d5f38 char[128]
-
+swrControl_ConfirmKeyNotDown 0x004D5FB8 int
 swrControl_JoystickMapping 0x004D5FC0 swrControl_InputMapping[64]
 swrControl_PrevJoystickAxisXInput 0x004D62D0 float[6]
 swrControl_PrevMouseAxisInputs 0x004D62E8 float[3]
-
+swrControl_AbortKeyDown 0x004D6300 int
+swrControl_AbortKeyNotDown 0x004D6304 int
+swrControl_ConfirmKeyDownButNotMouse 0x004D6308 int
 WindowsInputStack 0x004d6310 WindowsInputItem[64]
 
 swrControl_MouseMapping 0x004D6518 swrControl_InputMapping[64]
+
+swrControl_ConfirmKeyDown 0x004D6824 int
 swrControl_KeyboardMapping 0x004D6828 swrControl_InputMapping[64]
 
 swrConfig_mouse_enabled 0x004d6b38 int
 stdControl_joystickDeviceIndex 0x004d6b3c int
+swrControl_ConfirmKeyJustPressed 0x004D6B40 int
+swrControl_AbortKeyJustPressed 0x004D6B44 int
+swrControl_ConfirmKeyButNotMouseJustPressed 0x004D6B48 int
+swrControl_ConfirmKeyJustReleased 0x004D6B4C int
+swrControl_AbortKeyJustReleased 0x004D6B50 int
 enableWindowInput 0x004D6B54 int
+swrControl_MaybeMouseDisabledInUI 0x004D6B58 int
 
 swrControl_AccumulatedMouseAxisInputs 0x004D6B60 float[3]
 
@@ -335,6 +344,8 @@ Windows_WinProc_res 0x0050b5a8 LRESULT
 
 Main_drawDevices 0x0050b5ac swrDrawDevices*
 Main_settings_menu_only 0x0050b5b0 int
+
+swrControl_CinematicSkipped 0x0050B5B8 int
 swrDisplay_directlyBlitVideoToScreen 0x0050b5bc int
 Main_settings_debug_hud 0x0050b5c0 int
 
@@ -822,6 +833,11 @@ miniMapDotTypes 0x00E345A0 char[190]
 
 swrTextEntries2Pos 0x00e34660 short[32][2]
 swrTextEntries1Pos 0x00e34860 short[128][2]
+
+tgfd_data_copy 0x00E34A80 swrTGFDData
+profile_slots 0x00E35A60 swrSaveData[20]
+
+tgfd_data 0x00E364A0 swrTGFDData
 
 assetBufferUnknownStats3 0x00E6B164 int
 swrModel_SkipByteswapCollisionVertices 0x00E6B168 int

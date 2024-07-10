@@ -678,6 +678,12 @@ void swrSprite_InitDrawing()
     HANG("TODO");
 }
 
+// 0x0044FCE0
+void swrText_ShowNotification(const char* a1, float a2)
+{
+    HANG("TODO");
+}
+
 // 0x0044FEF0
 int AddDotToMiniMap(char, short, short)
 {

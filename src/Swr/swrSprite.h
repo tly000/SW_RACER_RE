@@ -81,6 +81,8 @@
 #define swrSprite_ResetCurrentMaterial_ADDR (0x0044F5F0)
 #define swrSprite_InitDrawing_ADDR (0x0044F600)
 
+#define swrText_ShowNotification_ADDR (0x0044FCE0)
+
 #define AddDotToMiniMap_ADDR (0x0044FEF0)
 #define RenderMiniMapDotsAndCrosses_ADDR (0x0044FF30)
 
@@ -164,7 +166,9 @@ void swrSprite_Draw(int* arg0, swrSpriteTexture*, RdMaterial**, float, float, fl
 void swrSprite_ResetCurrentMaterial();
 void swrSprite_InitDrawing();
 
-int  AddDotToMiniMap(char, short, short);
+void swrText_ShowNotification(const char* a1, float a2);
+
+int AddDotToMiniMap(char, short, short);
 void RenderMiniMapDotsAndCrosses();
 
 void swrSprite_Draw1(swrSpriteTexture*, short, short, float, float, float angle, short, short, int, unsigned __int8, unsigned __int8, unsigned __int8, unsigned __int8);

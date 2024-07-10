@@ -199,6 +199,18 @@ int swrObjHang_F4(swrObjHang* hang, int* subEvents, int* p3, void* p4, int p5)
     return 0;
 }
 
+// 0x0045B610
+swrScore* swrObjHang_PreparePlayerPodDataMultiplayer(swrObjHang* a1, int a2)
+{
+    HANG("TODO");
+}
+
+// 0x0045B7D0
+swrScore* swrObjHang_PreparePlayerPodData(swrObjHang* a1, int a2)
+{
+    HANG("TODO");
+}
+
 // 0x0045d0b0
 void swrObjJdge_Clear(swrObjJdge* jdge, int event)
 {

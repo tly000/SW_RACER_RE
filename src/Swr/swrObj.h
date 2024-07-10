@@ -58,6 +58,9 @@
 
 #define swrObjHang_F4_ADDR (0x0045a040)
 
+#define swrObjHang_PreparePlayerPodDataMultiplayer_ADDR (0x0045B610)
+#define swrObjHang_PreparePlayerPodData_ADDR (0x0045B7D0)
+
 #define swrObjJdge_Clear_ADDR (0x0045d0b0)
 
 #define NumLocalPlayers_ADDR (0x0045D350)
@@ -207,6 +210,9 @@ void swrObjHang_F3(swrObjHang* hang);
 void swrObjHang_LoadAllPilotSprites(void);
 
 int swrObjHang_F4(swrObjHang* hang, int* subEvents, int* p3, void* p4, int p5);
+
+swrScore * swrObjHang_PreparePlayerPodDataMultiplayer(swrObjHang *a1, int a2);
+swrScore * swrObjHang_PreparePlayerPodData(swrObjHang *a1, int a2);
 
 void swrObjJdge_Clear(swrObjJdge* jdge, int event);
 
