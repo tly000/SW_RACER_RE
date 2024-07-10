@@ -4,6 +4,7 @@
 #include "backends/imgui_impl_d3d.h"
 #include "backends/imgui_impl_win32.h"
 #include "imgui.h"
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstring>
@@ -30,17 +31,18 @@ extern "C" {
 #include <Engine/rdCanvas.h>
 #include <General/utils.h>
 #include <Main/swrControl.h>
+#include <Platform/stdControl.h>
 #include <Raster/rdCache.h>
 #include <Swr/swrEvent.h>
 #include <Swr/swrRace.h>
 #include <Swr/swrRender.h>
+#include <Swr/swrSprite.h>
 #include <Swr/swrViewport.h>
 #include <Win95/DirectX.h>
 #include <Win95/Window.h>
 #include <Win95/stdConsole.h>
 #include <Win95/stdDisplay.h>
 #include <swr.h>
-#include <swr/swrSprite.h>
 }
 
 extern "C" FILE *hook_log = nullptr;
@@ -57,38 +59,33 @@ LRESULT CALLBACK WndProc(HWND wnd, UINT code, WPARAM wparam, LPARAM lparam) {
 }
 
 static bool imgui_initialized = false;
-static bool show_opengl = true;
 
-void fix_lods_for_2_local_players(
-    swrModel_Node *node,
-    std::map<swrModel_NodeLODSelector *, std::array<float, 8>> &saved_lod_values) {
-    if (!node)
-        return;
-
-    if (node->type == NODE_LOD_SELECTOR) {
-        auto selector = (swrModel_NodeLODSelector *) node;
-        auto &values = saved_lod_values[selector];
-        std::memcpy(values.data(), selector->lod_distances, sizeof(values));
-
-        int first_elem = 0;
-        for (int k = 0; k < selector->node.num_children; k++) {
-            if (selector->node.child_nodes[k]) {
-                first_elem = k;
-                break;
-            }
-        }
-
-        for (int k = 0; k < selector->node.num_children; k++) {
-            selector->lod_distances[k] = k <= first_elem ? 0 : -1;
-        }
-    }
-
-    if (!(node->type & NODE_HAS_CHILDREN))
-        return;
-
-    for (int i = 0; i < node->num_children; i++)
-        fix_lods_for_2_local_players(node->child_nodes[i], saved_lod_values);
+auto store_state(auto &...vars) {
+    return std::make_tuple(std::make_pair(&vars, vars)...);
 }
+
+auto copy_current_state(const auto &backup) {
+    return std::apply(
+        [](const auto &...elems) {
+            return std::make_tuple(std::make_pair(elems.first, *elems.first)...);
+        },
+        backup);
+}
+
+auto restore_state(const auto &backup) {
+    std::apply([](const auto &...elems) { ((*elems.first = elems.second), ...); }, backup);
+}
+
+auto second_player_input_state = store_state(
+    *(std::array<float, 4> *) &swrControl_AxisInput,
+    *(std::array<float, 15> *) &swrControl_ButtonInput,
+    *(std::array<float, 15> *) &swrControl_ButtonDownTime,
+    *(std::array<char, 15> *) &swrControl_ButtonPressed, swrControl_BrakeInputDown,
+    swrControl_ConfirmKeyDown, swrControl_ConfirmKeyNotDown, swrControl_ConfirmKeyJustPressed,
+    swrControl_ConfirmKeyJustReleased, swrControl_AbortKeyDown, swrControl_AbortKeyNotDown,
+    swrControl_AbortKeyJustPressed, swrControl_AbortKeyJustReleased,
+    swrControl_ConfirmKeyDownButNotMouse, swrControl_ConfirmKeyButNotMouseJustPressed,
+    swrControl_MaybeMouseDisabledInUI, stdControl_lastReadTime);
 
 int stdDisplay_Update_Hook() {
     auto *hang = (swrObjHang *) swrEvent_GetItem('Hang', 0);
@@ -142,12 +139,20 @@ int stdDisplay_Update_Hook() {
                         localPlayerInputPressedBitset[i], localPlayerInputReleasedBitset[i],
                         localPlayerForwardAxisInput[i], localPlayerTurnAxisInput[i]);
         }
+
+        /*const auto &second_player_axis_input = &stdControl_aAxisPos[6];
+        ImGui::Text("Second player axis input: %d %d %d %d %d %d", second_player_axis_input[0],
+                    second_player_axis_input[1], second_player_axis_input[2],
+                    second_player_axis_input[3], second_player_axis_input[4],
+                    second_player_axis_input[5]);*/
+
         auto judge = (swrObjJdge *) swrEvent_GetItem('Jdge', 0);
         if (judge) {
             ImGui::Text("Jdge: obj.flags=%0x flag=%0x", judge->obj.flags, judge->flag);
         }
 
         if (hang) {
+            ImGui::Text("hang state=%d", hang->state);
             int num_players = hang->num_local_players;
             if (ImGui::SliderInt("num players", &num_players, 1, 4))
                 hang->num_local_players = num_players;
@@ -236,7 +241,7 @@ void update_camera(const swrViewport &viewport) {
     rdCamera_pCurCamera->pClipFrustum->bFarClip = 0;
     rdCamera_pCurCamera->pClipFrustum->zNear = viewport.near_clipping;
     rdCamera_pCurCamera->pClipFrustum->zFar = viewport.far_clipping;
-    rdCamera_pCurCamera->fov = std::min(std::max(viewport.fov_y_degrees, 5.0f), 179.0f);
+    rdCamera_pCurCamera->fov = (std::min)((std::max)(viewport.fov_y_degrees, 5.0f), 179.0f);
     rdCamera_UpdateProject(rdCamera_pCurCamera, viewport.aspect_ratio);
     const rdMatrix34 mat{
         (const rdVector3 &) viewport.model_matrix.vA,
@@ -272,11 +277,6 @@ void swrViewport_Render_Hook(int viewport_index) {
         viewport.viewport_y2 = 240;
     }
     update_camera(viewport);
-
-    std::map<swrModel_NodeLODSelector *, std::array<float, 8>> saved_lod_values;
-    if (in_race && numLocalPlayers == 2) {
-        fix_lods_for_2_local_players(viewport.model_root_node, saved_lod_values);
-    }
 
     IDirect3DViewport3 *backup_viewport = nullptr;
     std3D_pD3Device->GetCurrentViewport(&backup_viewport);
@@ -319,13 +319,6 @@ void swrViewport_Render_Hook(int viewport_index) {
     std3D_pD3Device->SetCurrentViewport(backup_viewport);
     std3D_pD3Device->DeleteViewport(d3d_viewport);
     d3d_viewport->Release();
-
-    // restore lod values
-    if (in_race && numLocalPlayers == 2) {
-        for (const auto &[selector, values]: saved_lod_values) {
-            std::memcpy(selector->lod_distances, values.data(), sizeof(values));
-        }
-    }
 }
 
 int KeyDownForPlayer1Or2_Hook(int key_bitset) {
@@ -379,79 +372,143 @@ void swrRace_InRaceTimer_Hook(swrScore *param_1, swrObjJdge *param_2) {
     speedDialPositions2[player_number] = speedDialPosition2;
 }
 
-auto store_state(auto &...vars) {
-    return std::make_tuple(std::make_pair(&vars, vars)...);
-}
+bool showed_local_multiplayer_notification = false;
 
-auto copy_current_state(const auto &backup) {
-    return std::apply(
-        [](const auto &...elems) {
-            return std::make_tuple(std::make_pair(elems.first, *elems.first)...);
-        },
-        backup);
-}
+const char *select_vehicle_text_default = "/SCREENTEXT_525/~c~sSelect Vehicle";
+const char *select_vehicle_text_player1 = "~c~sP1 Keyboard:Select Vehicle";
+const char *select_vehicle_text_player1_with_gamepad = "~c~sP1 Kbd or Gamepad:Select Vehicle";
+const char *select_vehicle_text_player2 = "~c~sP2 Gamepad:Select Vehicle";
 
-auto restore_state(const auto &backup) {
-    std::apply([](const auto &...elems) { ((*elems.first = elems.second), ...); }, backup);
-}
-
-auto second_player_input_state =
-    store_state(*(std::array<float, 4> *) &swrControl_AxisInput,
-                *(std::array<float, 15> *) &swrControl_ButtonInput,
-                *(std::array<float, 15> *) &swrControl_ButtonDownTime,
-                *(std::array<char, 15> *) &swrControl_ButtonPressed, swrControl_BrakeInputDown,
-                swrControl_ConfirmKeyDown, swrControl_ConfirmKeyNotDown,
-                swrControl_ConfirmKeyJustPressed, swrControl_ConfirmKeyJustReleased,
-                swrControl_AbortKeyDown, swrControl_AbortKeyNotDown, swrControl_AbortKeyJustPressed,
-                swrControl_AbortKeyJustReleased, swrControl_ConfirmKeyDownButNotMouse,
-                swrControl_ConfirmKeyButNotMouseJustPressed, swrControl_MaybeMouseDisabledInUI);
+std::optional<int> second_player_joystick_index;
 
 void swrControl_ProcessInputs_Hook() {
-    /*auto hang = (const swrObjHang *) swrEvent_GetItem('Hang', 0);
-    if (!hang || hang->num_local_players <= 1) {
-        hook_call_original(swrControl_ProcessInputs);
-        return;
+    auto hang = (swrObjHang *) swrEvent_GetItem('Hang', 0);
+    if (hang) {
+        if (hang->state == swrObjHang_STATE_SPLASH) {
+            hang->num_local_players = 1;
+        }
+        if (hang->state == swrObjHang_STATE_SELECT_PLANET) {
+            hang->current_player_for_vehicle_selection = 0;
+        }
+        if (hang->num_local_players == 1 && hang->state == swrObjHang_STATE_SELECT_VEHICLE &&
+            !hang->bIsTournament && !multiplayer_enabled) {
+            strcpy((char *) 0x4C08E4, select_vehicle_text_default);
+            if (!showed_local_multiplayer_notification) {
+                const char *notification =
+                    stdControl_numJoystickDevices == 0 ? "~n2 player:plug in gamepad and restart."
+                    : !swrConfig_joystick_enabled      ? "~n2 player:enable joystick in settings."
+                                                       : "~n2 player: press 'repair' on gamepad.";
+                swrText_ShowNotification(notification, 10000);
+                showed_local_multiplayer_notification = true;
+            }
+
+            std::vector<uint32_t> repair_button_indices;
+            for (const auto &mapping: swrControl_JoystickMapping) {
+                if (mapping.output_index == 9)
+                    repair_button_indices.push_back(mapping.input_index);
+            }
+
+            for (int device = 0; device < stdControl_numJoystickDevices; device++) {
+                const bool repair_pressed =
+                    std::any_of(repair_button_indices.begin(), repair_button_indices.end(),
+                                [&](const uint32_t &index) {
+                                    return stdControl_ReadKey(index + 32 * (device + 8), nullptr);
+                                });
+                if (repair_pressed) {
+                    // enable all axis inputs for all devices, otherwise the second game pad is not detected.
+                    for (int device = 0; device < stdControl_numJoystickDevices; device++) {
+                        for (int axis = 0; axis < 6; axis++)
+                            stdControl_EnableAxis(6 * device + axis);
+                    }
+
+                    second_player_joystick_index = device;
+                    hang->num_local_players = 2;
+                    // copy profile 0 to slot 1 to unlock pods and upgrades for player 1
+                    std::memcpy(&profile_slots[1], &profile_slots[0], sizeof(swrSaveData));
+
+                    swrText_ShowNotification("2nd player enabled!", 3.0);
+                    showed_local_multiplayer_notification = false;
+                    break;
+                }
+            }
+        } else {
+            strcpy((char *) 0x4C08E4, hang->current_player_for_vehicle_selection == 0
+                                          ? stdControl_numJoystickDevices >= hang->num_local_players
+                                                ? select_vehicle_text_player1_with_gamepad
+                                                : select_vehicle_text_player1
+                                          : select_vehicle_text_player2);
+            if (showed_local_multiplayer_notification) {
+                swrText_ShowNotification("", 0.01);
+                showed_local_multiplayer_notification = false;
+            }
+        }
     }
 
-    if (hang->num_local_players != 2)
-        std::abort();*/
+    const auto input_config_backup =
+        store_state(swrConfig_keyboard_enabled, swrConfig_mouse_enabled, swrConfig_joystick_enabled,
+                    stdControl_joystickDeviceIndex);
 
-    auto last_read_time = stdControl_lastReadTime;
+    if (hang && hang->num_local_players > 1) {
+        const auto input_state = copy_current_state(second_player_input_state);
 
-    const auto input_config_backup = store_state(
-        DirectInputNbKeyboard, DirectInputNbMouses, stdControl_numJoystickDevices,
-        swrConfig_keyboard_enabled, swrConfig_mouse_enabled, swrConfig_joystick_enabled);
+        restore_state(second_player_input_state);
+        // second player input first, disable mouse and keyboard input
+        swrConfig_keyboard_enabled = false;
+        swrConfig_mouse_enabled = false;
+        swrConfig_joystick_enabled = true;
+        stdControl_joystickDeviceIndex = second_player_joystick_index.value();
 
-    const auto input_state = copy_current_state(second_player_input_state);
+        hook_call_original(swrControl_ProcessInputs);
+        // copy internalInputData to second player, this will make sure that the local player input
+        // bitsets are created correctly.
+        std::memcpy(internalInputData + 24, internalInputData, 24);
 
-    restore_state(second_player_input_state);
-    // second player input first, disable mouse and keyboard input
-    DirectInputNbKeyboard = 0;
-    DirectInputNbMouses = 0;
-    swrConfig_keyboard_enabled = false;
-    swrConfig_mouse_enabled = false;
-    stdControl_numJoystickDevices = 1;
+        // copy input state:
+        second_player_input_state = copy_current_state(second_player_input_state);
 
-    hook_call_original(swrControl_ProcessInputs);
-    // copy internalInputData to second player, this will make sure that the local player input
-    // bitsets are created correctly.
-    std::memcpy(internalInputData + 24, internalInputData, 24);
-    // copy input state:
-    second_player_input_state = copy_current_state(second_player_input_state);
-
-    restore_state(input_state);
+        restore_state(input_state);
+        restore_state(input_config_backup);
+    }
 
     // first player afterwards, this way all global vars should be set as if nothing happened,
     // (hopefully...)
-    stdControl_lastReadTime = last_read_time;
-    stdControl_numJoystickDevices = 0;
-    swrConfig_joystick_enabled = false;
-    swrConfig_keyboard_enabled = true;
-    DirectInputNbKeyboard = 1;
-    DirectInputNbMouses = 0;
+    if (hang->num_local_players == 2) {
+        // select a different joystick for player 1, if it's taken by player 2.
+        if (stdControl_joystickDeviceIndex == second_player_joystick_index) {
+            if (stdControl_numJoystickDevices == 1) {
+                // no joystick left for player 1
+                swrConfig_joystick_enabled = false;
+            } else {
+                for (int device = 0; device < stdControl_numJoystickDevices; device++) {
+                    if (device != second_player_joystick_index) {
+                        stdControl_joystickDeviceIndex = device;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     hook_call_original(swrControl_ProcessInputs);
 
     restore_state(input_config_backup);
+}
+
+BOOL swrControl_AnyConfirmKeyDown_Hook(int banned_control_id) {
+    auto hang = (swrObjHang *) swrEvent_GetItem('Hang', 0);
+    if (hang && hang->state == swrObjHang_STATE_SELECT_VEHICLE) {
+        if (hang->current_player_for_vehicle_selection == 1) {
+            // let player2 confirm its input via game pad, keyboard input banned
+            banned_control_id = 2;
+            stdControl_joystickDeviceIndex = second_player_joystick_index.value();
+        }
+        if (hang->current_player_for_vehicle_selection == 0 &&
+            stdControl_joystickDeviceIndex == second_player_joystick_index) {
+            // let player1 confirm its input via game pad, game pad banned
+            banned_control_id = 0;
+        }
+    }
+    return hook_call_original(swrControl_AnyConfirmKeyDown, banned_control_id);
 }
 
 void swrRace_HandleInputs_Hook(swrRace *player) {
@@ -533,6 +590,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
     hook_replace(swrSprite_Draw1, swrSprite_Draw1_Hook);
     hook_replace(swrRace_InRaceTimer, swrRace_InRaceTimer_Hook);
     hook_replace(swrControl_ProcessInputs, swrControl_ProcessInputs_Hook);
+    hook_replace(swrControl_AnyConfirmKeyDown, swrControl_AnyConfirmKeyDown_Hook);
     hook_replace(swrRace_HandleInputs, swrRace_HandleInputs_Hook);
     hook_replace(swrObjHang_PreparePlayerPodData, swrObjHang_PreparePlayerPodData_Hook);
     init_hooks();
@@ -552,6 +610,17 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
     char *patch_end = (char *) 0x45B8BC;
     VirtualProtect(patch_pos, patch_end - patch_pos, PAGE_EXECUTE_READWRITE, &old_protect);
     memset(patch_pos, 0x90, patch_end - patch_pos);
+
+    // removes code that disables loading MAlt model for the pods if there are multiple local
+    // players.
+    uint8_t *patch_pos2 = (uint8_t *) 0x466554;
+    VirtualProtect(patch_pos2, 6, PAGE_EXECUTE_READWRITE, &old_protect);
+    *patch_pos2++ = 0xBF;
+    *patch_pos2++ = 0x01;
+    *patch_pos2++ = 0x00;
+    *patch_pos2++ = 0x00;
+    *patch_pos2++ = 0x00;
+    *patch_pos2++ = 0x90;
 
     return TRUE;
 }

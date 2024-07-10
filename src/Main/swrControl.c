@@ -29,14 +29,26 @@ int swrControl_RemoveMapping(void* cid, char* mondo_text, int param_3, int which
     HANG("TODO");
 }
 
+// 0x004078a0
+void swrControl_ReplaceMapping(void* cid, char* fnStr, int whichOne, int bAnalogCapture, int unk, int controllerBinding)
+{
+    HANG("TODO");
+}
+
 // 0x004078e0
 int swrControl_AddMapping(void* cid, char* fnStr, int controllerBinding, int bAnalogCapture, int unk, int unk2)
 {
     HANG("TODO");
 }
 
-// 0x004078a0
-void swrControl_ReplaceMapping(void* cid, char* fnStr, int whichOne, int bAnalogCapture, int unk, int controllerBinding)
+// 0x00407EA0
+BOOL swrControl_AnyConfirmKeyDown(int banned_control_id)
+{
+    HANG("TODO");
+}
+
+// 0x00407F80
+BOOL swrControl_AnyAbortKeyDown(int banned_control_id)
 {
     HANG("TODO");
 }

@@ -10,9 +10,11 @@
 
 #define swrControl_RemoveMapping_ADDR (0x00407500)
 
+#define swrControl_ReplaceMapping_ADDR (0x004078a0)
 #define swrControl_AddMapping_ADDR (0x004078e0)
 
-#define swrControl_ReplaceMapping_ADDR (0x004078a0)
+#define swrControl_AnyConfirmKeyDown_ADDR (0x00407EA0)
+#define swrControl_AnyAbortKeyDown_ADDR (0x00407F80)
 
 #define swrControl_Startup_ADDR (0x00423efd)
 
@@ -23,9 +25,11 @@ void swrControl_ProcessInputs(void);
 
 int swrControl_RemoveMapping(void* cid, char* mondo_text, int param_3, int whichone, int bool_unk);
 
+void swrControl_ReplaceMapping(void* cid, char* fnStr, int whichOne, int bAnalogCapture, int unk, int controllerBinding);
 int swrControl_AddMapping(void* cid, char* fnStr, int controllerBinding, int bAnalogCapture, int unk, int unk2);
 
-void swrControl_ReplaceMapping(void* cid, char* fnStr, int whichOne, int bAnalogCapture, int unk, int controllerBinding);
+BOOL swrControl_AnyConfirmKeyDown(int banned_control_id);
+BOOL swrControl_AnyAbortKeyDown(int banned_control_id);
 
 int swrControl_Startup(void);
 
