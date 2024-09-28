@@ -12,7 +12,7 @@ void DirectDraw_InitProgressBar(void)
     HANG("TODO");
 }
 
-// 0x00408620 HOOK
+// 0x00408620
 void DirectDraw_Shutdown(void)
 {
     if (iDirectDraw4_error == 0)
@@ -33,7 +33,7 @@ void DirectDraw_LockZBuffer(uint32_t* bytes_per_depth_value, LONG* pitch, LPVOID
     HANG("TODO");
 }
 
-// 0x00431cd0 HOOK
+// 0x00431cd0
 void DirectDraw_UnlockZBuffer(void)
 {
     LPDIRECTDRAWSURFACE4 This = DirectDraw_GetZBuffer();
@@ -47,7 +47,7 @@ int DirectInput_EnumDevice_Callback(DIDEVICEINSTANCEA* deviceInstance)
     return 1;
 }
 
-// 0x00486ad0 HOOK
+// 0x00486ad0
 BOOL DirectPlay_Startup(void)
 {
     IDirectPlay4Vtbl* pIVar1;
@@ -77,7 +77,7 @@ BOOL DirectPlay_Startup(void)
     return HVar2 < 0;
 }
 
-// 0x00486b40 HOOK
+// 0x00486b40
 void DirectPlay_Destroy(void)
 {
     int iVar1;
@@ -129,7 +129,7 @@ int DirectDraw_GetSelectedDevice(StdDisplayDevice* device)
     HANG("TODO");
 }
 
-// 0x00488880 HOOK
+// 0x00488880
 bool DirectDraw_GetAvailableVidMem(LPDWORD total, LPDWORD free)
 {
     HRESULT HVar1;
@@ -143,7 +143,7 @@ bool DirectDraw_GetAvailableVidMem(LPDWORD total, LPDWORD free)
     return HVar1 != 0;
 }
 
-// 0x00488a80 HOOK
+// 0x00488a80
 IDirectDrawSurface4* DirectDraw_GetZBuffer(void)
 {
     return stdDisplay_zBuffer.pDDSurf;
@@ -169,7 +169,7 @@ HRESULT __stdcall DirectDraw_EnumDisplayModes_Callback(DDSURFACEDESC2* surfaceDe
     return 0;
 }
 
-// 0x0048a140 HOOK
+// 0x0048a140
 int Direct3d_SetFogMode(void)
 {
     HRESULT hres;
@@ -196,7 +196,7 @@ int Direct3d_SetFogMode(void)
     return 0;
 }
 
-// 0x0048a1a0 HOOK
+// 0x0048a1a0
 int Direct3d_IsLensflareCompatible(void)
 {
     return (d3dDeviceDesc.dpcTriCaps.dwTextureBlendCaps & 0xff) >> 3 & 1;
@@ -208,7 +208,7 @@ void Direct3d_ConfigFog(float r, float g, float b, float near_, float far_)
     HANG("TODO");
 }
 
-// 0x0048b3c0 HOOK
+// 0x0048b3c0
 bool Direct3d_CreateAndAttachViewport(void)
 {
     HRESULT hres;
