@@ -6,8 +6,10 @@
 #include <format>
 #include <glad/glad.h>
 #include <map>
+#include <optional>
 
 #include "renderer_utils.h"
+#include "shaders_utils.h"
 
 extern "C" {
 #include <Primitives/rdMatrix.h>
@@ -126,9 +128,11 @@ std::string CombineMode::to_string() const {
 }
 
 ColorCombineShader
-get_or_compile_color_combine_shader(const std::array<CombineMode, 4> &combiners) {
+get_or_compile_color_combine_shader(ImGuiState &state,
+                                    const std::array<CombineMode, 4> &combiners) {
     static std::map<std::array<CombineMode, 4>, ColorCombineShader> shader_map;
-    if (shader_map.contains(combiners))
+    if (shader_map.contains(combiners) && (state.shader_flags & ImGuiStateFlags_RESET) == 0 &&
+        (state.shader_flags & ImGuiStateFlags_RECOMPILE) == 0)
         return shader_map.at(combiners);
 
     const std::string defines = std::format("#define COLOR_CYCLE_1 {}\n"
@@ -185,6 +189,33 @@ uniform bool fogEnabled;
 uniform float fogStart;
 uniform float fogEnd;
 uniform vec4 fogColor;
+uniform int model_id;
+
+vec3 HSV_to_RGB(float h, float s, float v) {
+    h = fract(h) * 6.0;
+    int i = int(h);
+    float f = h - float(i);
+    float p = v * (1.0 - s);
+    float q = v * (1.0 - s * f);
+    float t = v * (1.0 - s * (1.0 - f));
+
+    switch(i) {
+        case 0: return vec3(v, t, p);
+        case 1: return vec3(q, v, p);
+        case 2: return vec3(p, v, t);
+        case 3: return vec3(p, q, v);
+        case 4: return vec3(t, p, v);
+
+        default:
+        break;
+    }
+    return vec3(v, p, q);
+}
+
+vec3 identifying_color(uint index) {
+    float f = index * 0.618033988749895;
+    return HSV_to_RGB(f - 1.0 * floor(f), 0.5, 1.0);
+}
 
 out vec4 color;
 void main() {
@@ -209,12 +240,50 @@ void main() {
     color = vec4(COLOR_CYCLE_2, ALPHA_CYCLE_2);
     if (fogEnabled)
         color.xyz = mix(color.xyz, fogColor.xyz, clamp((passZ - fogStart) / (fogEnd - fogStart), 0, 1));
+
+    // color.xyz = vec3(1.0, 0.0, 1.0);
+    // if (model_id != -1) {
+    //     color.xyz = identifying_color(uint(model_id));
+    // }
 }
 )";
 
     const char *fragment_sources[]{"#version 330 core\n", defines.c_str(), fragment_shader_source};
-    GLuint program = compileProgram(1, &vertex_shader_source, std::size(fragment_sources),
-                                    std::data(fragment_sources));
+
+    if (state.shader_flags & ImGuiStateFlags_RESET) {
+        state.shader_flags =
+            static_cast<ImGuiStateFlags>(state.shader_flags & ~ImGuiStateFlags_RESET);
+
+        state.vertex_shd = std::string(vertex_shader_source);
+        state.fragment_shd = std::string();
+        for (auto cstr: fragment_sources)
+            state.fragment_shd += std::string(cstr);
+    }
+
+    GLuint program;
+    if (state.shader_flags & ImGuiStateFlags_RECOMPILE) {
+        state.shader_flags =
+            static_cast<ImGuiStateFlags>(state.shader_flags & ~ImGuiStateFlags_RECOMPILE);
+
+        const char *tmp_vert = state.vertex_shd.c_str();
+        const char *tmp_frag = state.fragment_shd.c_str();
+        std::optional<GLuint> tmp_program = compileProgram(1, &tmp_vert, 1, &tmp_frag);
+
+        if (tmp_program.has_value()) {
+            program = tmp_program.value();
+
+            fprintf(hook_log, "Recompiled n64 shader with frag %s\n", tmp_frag);
+            fflush(hook_log);
+        }
+    } else {
+        // This will be recompiled even when not needed. (RESET is true)
+        // Not that important since imgui is here for developement / modding purposes ?
+        std::optional<GLuint> program_opt = compileProgram(
+            1, &vertex_shader_source, std::size(fragment_sources), std::data(fragment_sources));
+        if (!program_opt.has_value())
+            std::abort();
+        program = program_opt.value();
+    }
 
     GLuint VAO;
     glGenVertexArrays(1, &VAO);
@@ -239,8 +308,9 @@ void main() {
         .fog_start_pos = glGetUniformLocation(program, "fogStart"),
         .fog_end_pos = glGetUniformLocation(program, "fogEnd"),
         .fog_color_pos = glGetUniformLocation(program, "fogColor"),
+        .model_id_pos = glGetUniformLocation(program, "model_id"),
     };
 
-    shader_map.emplace(combiners, shader);
+    shader_map.insert_or_assign(combiners, shader);
     return shader;
 }

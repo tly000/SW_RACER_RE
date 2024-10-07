@@ -9,11 +9,12 @@
 
 #include "renderer_hook.h"
 #include "renderer_utils.h"
+#include "tinygltf/gltf_utils.h"
 
 #include "hook_helper.h"
 
 
-extern "C" FILE *hook_log = nullptr;
+FILE *hook_log = nullptr;
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
     if (fdwReason != DLL_PROCESS_ATTACH)
@@ -24,6 +25,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
     fprintf(hook_log, "[DllMain]\n");
     fflush(hook_log);
 
+    load_gltf_models();
     init_renderer_hooks();
     init_hooks();
 
