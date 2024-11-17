@@ -824,6 +824,12 @@ int swrRace_BoostCharge(int player)
     return 0;
 }
 
+// 0x0046BEC0
+void swrRace_HandleInputs(swrRace* player)
+{
+    HANG("TODO");
+}
+
 // 0x00477ad0
 void swrRace_CalculateTiltFromTurn(int pEngine, rdVector4* pXformZ, float ZMotion, rdVector3* pRDot)
 {

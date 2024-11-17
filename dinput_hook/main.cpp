@@ -19,6 +19,7 @@
 #include "hook_helper.h"
 
 #include <optional>
+#include <unordered_map>
 
 extern "C"
 {
@@ -29,6 +30,13 @@ extern "C"
 #include <Swr/swrUI.h>
 #include <Swr/swrRace.h>
 #include <Swr/swrLoader.h>
+#include <Raster/rdCache.h>
+#include <Swr/swrViewport.h>
+#include <Swr/swrRace.h>
+#include <Platform/stdControl.h>
+#include <Primitives/rdMatrix.h>
+#include <Primitives/rdMath.h>
+#include <Engine/rdCamera.h>
 }
 
 extern "C"
@@ -45,7 +53,7 @@ LRESULT CALLBACK WndProc(HWND wnd, UINT code, WPARAM wparam, LPARAM lparam)
     if (ImGui_ImplWin32_WndProcHandler(wnd, code, wparam, lparam))
         return 1;
 
-    return WndProcOrig(wnd, code, wparam, lparam);
+    return CallWindowProcA(WndProcOrig, wnd, code, wparam, lparam);
 }
 
 static bool imgui_initialized = false;
@@ -93,6 +101,15 @@ int stdDisplay_Update_Hook()
             ImGui::Text("hang->circuitIdx=%d", int(hang->circuitIdx));
             ImGui::Text("hang->track_index=%d", int(hang->track_index));
         }
+
+        int data[6];
+        for (int i = 0; i < 6; i++)
+            data[i] = stdControl_aAxisPos[i];
+
+        ImGui::Text("num joystick axes: %d", swrConfig_joystickNbAxis);
+        for (int i = 0; i < 6; i++)
+            ImGui::Text("joystick input %d: %f %d", i, swrControl_JoystickAxisInputs[i], data[i]);
+
         ImGui::End();
 
         // Rendering
@@ -222,6 +239,122 @@ void swrRace_CourseInfoMenu_Hook(swrObjHang* hang)
     hook_call_original(swrRace_CourseInfoMenu, hang);
 }
 
+std::unordered_map<swrModel_NodeTransformed*, rdMatrix34> prev_transforms, curr_transforms;
+std::optional<rdMatrix44> prev_cam_matrix;
+rdMatrix44 curr_cam_matrix;
+
+auto interpolate_transforms(const auto& a, const auto& b, float t)
+{
+    // TODO hack
+    decltype(a) result{};
+    for (int i = 0; i < sizeof(a) / sizeof(float); i++)
+        ((float*)&result)[i] = (1 - t) * ((const float*)&a)[i] + t * ((const float*)&b)[i];
+
+    return result;
+}
+
+void collect_all_transforms(swrModel_Node* node, std::unordered_map<swrModel_NodeTransformed*, rdMatrix34>& transforms)
+{
+    if (!node)
+        return;
+
+    if (node->type & NODE_IS_TRANSFORMED)
+    {
+        auto transformed_node = (swrModel_NodeTransformed*)node;
+        transforms[transformed_node] = transformed_node->transform;
+    }
+
+    if (!(node->type & NODE_HAS_CHILDREN))
+        return;
+
+    for (int i = 0; i < node->num_children; i++)
+        collect_all_transforms(node->child_nodes[i], transforms);
+}
+
+void restore_transforms(const std::unordered_map<swrModel_NodeTransformed*, rdMatrix34>& transforms)
+{
+    for (const auto& [node, transform] : transforms)
+        node->transform = transform;
+}
+
+void (*sub_445980)(int16_t a1, int16_t a2) = (void (*)(int16_t, int16_t))0x445980;
+
+void sub_445980_Hook(int16_t a1, int16_t a2)
+{
+    const auto backup = std::make_tuple(swrTextEntries1Count, swrTextEntries2Count, numMiniMapPositions);
+    if (a2 != 2)
+        sub_445980(a1, a2);
+
+    if (a2 == 2)
+    {
+        curr_transforms.clear();
+        collect_all_transforms(swrViewport_Get(1)->model_root_node, curr_transforms);
+        curr_cam_matrix = swrViewport_Get(1)->model_matrix;
+
+        const int N = 3;
+        for (int i = 0; i < N; i++)
+        {
+            const float t = float(i+1) / N;
+            if (!prev_transforms.empty())
+            {
+                for (const auto& [node, transform] : curr_transforms)
+                {
+                    auto it = prev_transforms.find(node);
+                    if (it == prev_transforms.end())
+                        continue;
+
+                    node->transform = interpolate_transforms(it->second, transform, t);
+                }
+            }
+
+            if (i != 0)
+            {
+                swrViewport_UpdateCameras();
+                if (prev_cam_matrix)
+                    swrViewport_Get(1)->model_matrix = interpolate_transforms(*prev_cam_matrix, curr_cam_matrix, t);
+
+                swrDisplay_SkipNextFrameUpdate = false;
+                rdCache_Flush();
+                rdCache_FlushAlpha();
+                stdDisplay_g_frontBuffer.pVSurface.pDDSurf->Flip(0, 0);
+                // stdDisplay_Update();
+
+                rdCache_AdvanceFrame();
+                stdDisplay_BackBufferFill(backBufferClearColor[0], backBufferClearColor[1], backBufferClearColor[2], 0);
+                std::tie(swrTextEntries1Count, swrTextEntries2Count, numMiniMapPositions) = backup;
+            }
+            if (prev_cam_matrix)
+            {
+                rdMatrix44 cam_matrix = interpolate_transforms(*prev_cam_matrix, curr_cam_matrix, t);
+                swrViewport_Get(1)->model_matrix = cam_matrix;
+                rdMatrix34 cam_matrix_{
+                    (const rdVector3&)cam_matrix.vA,
+                    (const rdVector3&)cam_matrix.vB,
+                    (const rdVector3&)cam_matrix.vC,
+                    (const rdVector3&)cam_matrix.vD,
+                };
+                rdCamera_Update(&cam_matrix_);
+            }
+            // RenderAll();
+            sub_445980(a1, a2);
+        }
+
+        restore_transforms(curr_transforms);
+        std::swap(curr_transforms, prev_transforms);
+        prev_cam_matrix = curr_cam_matrix;
+    }
+}
+
+void swrRace_HandleInputs_Hook(swrRace* player)
+{
+    // fprintf(hook_log, "swrRace_DebugFlag=%08x\n", swrRace_DebugFlag);
+    // fflush(hook_log);
+    swrRace_DebugFlag |= 0x2000000;
+    localPlayerForwardAxisInput[2] = -(stdControl_aAxisPos[5] - 32768) / 32768.0;
+    localPlayerTurnAxisInput[2] = (stdControl_aAxisPos[2] - 32768) / 32768.0;
+    hook_call_original(swrRace_HandleInputs, player);
+}
+
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
     if (fdwReason != DLL_PROCESS_ATTACH)
@@ -240,11 +373,23 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     char zero = '\0';
     write(0x4C0EE4, &zero, 1);
 
-    hook_replace(swrUI_GetTrackNameFromId, swrUI_GetTrackNameFromId_Hook);
-    hook_replace(swrRace_CourseInfoMenu, swrRace_CourseInfoMenu_Hook);
-    hook_replace(stdDisplay_Update, stdDisplay_Update_Hook);
-    hook_replace(stdConsole_GetCursorPos, stdConsole_GetCursorPos_Hook);
-    hook_replace(stdConsole_SetCursorPos, stdConsole_SetCursorPos_Hook);
+    // frame interpolation:
+    // DetourTransactionBegin();
+    // DetourAttach(&sub_445980, sub_445980_Hook);
+    // DetourTransactionCommit();
+
+    // custom track menu:
+    // hook_replace(swrUI_GetTrackNameFromId, swrUI_GetTrackNameFromId_Hook);
+    // hook_replace(swrRace_CourseInfoMenu, swrRace_CourseInfoMenu_Hook);
+
+    // imgui:
+    // hook_replace(stdDisplay_Update, stdDisplay_Update_Hook);
+    // hook_replace(stdConsole_GetCursorPos, stdConsole_GetCursorPos_Hook);
+    // hook_replace(stdConsole_SetCursorPos, stdConsole_SetCursorPos_Hook);
+
+    // rrdual mode:
+    // hook_replace(swrRace_HandleInputs, swrRace_HandleInputs_Hook);
+
     init_hooks();
 
     return TRUE;

@@ -33,6 +33,8 @@
 #define swrViewport_SetRootNodeForAllViewports_ADDR (0x00483fc0)
 #define swrViewport_SetNodeFlagsForAllViewports_ADDR (0x00483ff0)
 
+void swrViewport_SetCameraIndex(short a1, swrViewport* mesh);
+void swrViewport_UpdateCameras();
 int swrViewport_GetNumViewports();
 swrViewport* swrViewport_Get(int index);
 void swrViewport_ExtractViewTransform(swrViewport* param_1, rdVector3* translation, rdVector3* rotation);

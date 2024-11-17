@@ -346,7 +346,7 @@ unkCameraArrayIndex 0x0050C038 int
 
 swrRace_DebugLevel 0x0050c040 int
 swrRace_DebugMenu 0x0050c044 int # set to >= 1
-swrRace_DebugFlag 0x0050c048 char # set to 63 for text
+swrRace_DebugFlag 0x0050c048 uint32_t # set to 63 for text
 
 DebugMenuState 0x0050c07c int
 
@@ -874,6 +874,12 @@ texture_count 0x00e9823c unsigned int
 
 InRace_PauseMenu_ScrollInOut 0x00e9824c float
 
+localPlayerForwardAxisInput 0x00E98E80 float[4]
+localPlayerInputDownBitset 0x00E98E90 int[4]
+localPlayerTurnAxisInput 0x00E98EA0 float[4]
+localPlayerInputPressedBitset 0x00E98EB0 int[4]
+localPlayerInputReleasedBitset 0x00E98EC0 int[4]
+
 inRaceLocalPlayerInputBitset3 0x00E98E90 int[4]
 inRaceLocalPlayerInputBitset1 0x00E98EB0 int[4]
 inRaceLocalPlayerInputBitset2 0x00E98EC0 int[4]
@@ -1033,6 +1039,18 @@ flip_y_axis 0x00ec8794 int
 flip_z_axis 0x00ec8798 int
 swrConfig_joystickNbButtons 0x00ec879c int
 swrConfig_joystickNbAxis 0x00ec87a0 int
+
+swrControl_JoystickAxisInputs 0x00EC87C0 float[6]
+swrControl_MouseAxisInputs 0x00EC87D8 float[3]
+swrControl_KeyboardAxisInputs 0x00EC87F0 float[3]
+swrControl_MouseAxisBitset 0x00EC8808 int
+swrControl_ButtonPressed 0x00EC8810 char[15]
+swrControl_BrakeInputDown 0x00EC8820 int
+swrControl_AxisInput 0x00EC8830 float[]
+swrControl_ButtonInput 0x00EC8840 float[15]
+swrControl_JoystickAxisBitset 0x00EC887C int
+swrControl_JoystickAxisInverted 0x00EC8880 int[]
+swrControl_ButtonDownTime 0x00EC88A0 float[15]
 
 swrRace_ThrottleInput 0x00ec8830 float
 swrRace_UnkInput 0x00ec8834 float

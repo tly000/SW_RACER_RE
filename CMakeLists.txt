@@ -86,4 +86,3 @@ if (OFF)
 endif()
 
 add_subdirectory(dinput_hook)
-add_subdirectory(custom_track_format)
