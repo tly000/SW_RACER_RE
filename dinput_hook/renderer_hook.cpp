@@ -74,6 +74,8 @@ static EnvInfos envInfos;
 
 static int frameCount = 0;
 
+std::map<swrModel_Node *, std::string> node_model_header_reference;
+
 GLuint GL_CreateDefaultWhiteTexture() {
     GLuint gl_tex = 0;
     glGenTextures(1, &gl_tex);
@@ -929,7 +931,7 @@ void imgui_Update() {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
-#else// !GLFW_BACKEND
+#else // !GLFW_BACKEND
 
     if (!imgui_initialized && std3D_pD3Device) {
         imgui_initialized = true;
@@ -1042,6 +1044,22 @@ swrModel_Header *swrModel_LoadFromId_Hook(MODELID id) {
     char *model_asset_pointer_begin = swrAssetBuffer_GetBuffer();
     auto header = hook_call_original(swrModel_LoadFromId, id);
     char *model_asset_pointer_end = swrAssetBuffer_GetBuffer();
+
+    int i = 0;
+    while (true) {
+        if (header->entries[i].node != 0 &&
+            ((const char *) header->entries[i].node < model_asset_pointer_begin ||
+             (const char *) header->entries[i].node > model_asset_pointer_end))
+            break;
+
+        if (header->entries[i].node != 0)
+            node_model_header_reference[header->entries[i].node] =
+                std::format("#{} in {}", i, modelid_cstr[id]);
+
+        i++;
+    }
+    fprintf(hook_log, "num node pointers in model %s header: %d\n", modelid_cstr[id], i);
+    fflush(hook_log);
 
     // remove all models whose asset pointer is invalid:
     std::erase_if(asset_pointer_to_model, [&](const auto &elem) {

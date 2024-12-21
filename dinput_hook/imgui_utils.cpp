@@ -30,6 +30,8 @@ extern uint8_t replacedTries[323];// 323 MODELIDs
 extern std::map<int, ReplacementModel> replacement_map;
 extern const char *modelid_cstr[];
 
+extern std::map<swrModel_Node *, std::string> node_model_header_reference;
+
 bool imgui_initialized = false;
 ImGuiState imgui_state = {
     .show_debug = false,
@@ -76,12 +78,24 @@ void imgui_render_node(swrModel_Node *node) {
             ImGui::SameLine();
 
             const auto model_id = find_model_id_for_node(child_node);
+            std::optional<std::string> node_ref;
+            if (node_model_header_reference.contains(child_node))
+            {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1,0,0,1));
+                node_ref = node_model_header_reference[child_node];
+            }
             if (ImGui::TreeNodeEx(std::format("{}: {:04x} 0x{:08x} {}", i,
                                               (uint32_t) child_node->type, (uintptr_t) child_node,
-                                              model_id ? modelid_cstr[model_id.value()] : "")
+                                              node_ref ? *node_ref : model_id ? modelid_cstr[model_id.value()] : "")
                                       .c_str())) {
+                if (node_ref)
+                    ImGui::PopStyleColor(1);
+
                 imgui_render_node(child_node);
                 ImGui::TreePop();
+            } else {
+                if (node_ref)
+                    ImGui::PopStyleColor(1);
             }
             ImGui::PopID();
         }
