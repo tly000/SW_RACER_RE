@@ -152,8 +152,8 @@ void rdProcEntry_Add2DQuad(short x0, short y0, short x1, short y1, float tex_u0,
 
 int swrSprite_UpperPowerOfTwo(int x);
 
-void swrModel_ConvertTextureDataToRdMaterial(int texture_type_a, int texture_type_b, int orig_width, int orig_height, int width, int height, swrMaterial** texture_data_ptr, uint8_t** palette_ptr, char a9, char a10);
-void swrModel_DoConvertTextureDataToRdMaterial(swrMaterial** texture_data_ptr, uint8_t** palette_data_ptr);
+void swrModel_ConvertTextureDataToRdMaterial(int texture_type_a, int texture_type_b, int orig_width, int orig_height, int width, int height, RdMaterial** texture_data_ptr, uint8_t** palette_ptr, char a9, char a10);
+void swrModel_DoConvertTextureDataToRdMaterial(RdMaterial** texture_data_ptr, uint8_t** palette_data_ptr);
 
 swrSpriteTexture* swrSprite_LoadTexture(int index);
 swrSpriteTexture* swrSprite_LoadTexture_(swrSprite_NAME index);

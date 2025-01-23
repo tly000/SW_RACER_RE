@@ -132,7 +132,7 @@ swrModel_Header* swrModel_LoadFromId(MODELID id)
         if ((data & 0xFF000000) == 0xA000000)
         {
             // this is a texture index
-            swrModel_LoadModelTexture(data & 0xFFFFFF, (swrMaterial**)&model_buff[i], (uint8_t**)&model_buff[i + 1]);
+            swrModel_LoadModelTexture(data & 0xFFFFFF, (RdMaterial**)&model_buff[i], (uint8_t**)&model_buff[i + 1]);
         }
         else if (data != 0)
         {
@@ -1457,7 +1457,13 @@ void swrModel_InitializeTextureBuffer()
 }
 
 // 0x00447490
-void swrModel_LoadModelTexture(TEXID texture_index, swrMaterial** material_ptr, uint8_t** palette_data_ptr)
+void swrModel_LoadModelTexture(TEXID texture_index, RdMaterial** material_ptr, uint8_t** palette_data_ptr)
+{
+    HANG("TODO");
+}
+
+// 0x004475D0
+void swrModel_CleanupTextureBuffer(void* assetBufferPtr)
 {
     HANG("TODO");
 }

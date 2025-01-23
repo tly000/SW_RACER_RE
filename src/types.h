@@ -1615,18 +1615,6 @@ extern "C"
         int unk14;
     } swrUI_Unk3; // sizeof(0x40)
 
-    typedef struct swrMaterial // use RdMaterial instead
-    {
-        char filename[64];
-        char unk40[4];
-        ColorInfo colorInfo;
-        int unk_mat_flag;
-        char unk80[8];
-        unsigned int nbTextures;
-        int unk8c;
-        void* textures_alloc;
-    } swrMaterial; // sizeof(0x94)
-
     typedef struct rdMaterialHeader
     {
         uint8_t magic[4];

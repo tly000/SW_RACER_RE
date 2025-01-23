@@ -18,7 +18,7 @@
 #define rdModel3Mesh_ApplyMaterialToAllFaces_ADDR (0x00432580)
 
 RdMaterial* rdMaterial_Load(char* pFilename);
-int rdMaterial_LoadEntry(char* mat_fpath, swrMaterial* material);
+int rdMaterial_LoadEntry(char* mat_fpath, RdMaterial* material);
 void rdMaterial_Free(RdMaterial* pMaterial);
 void rdMaterial_FreeEntry(RdMaterial* pMaterial);
 

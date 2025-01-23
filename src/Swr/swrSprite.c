@@ -496,7 +496,7 @@ int swrSprite_UpperPowerOfTwo(int x)
 }
 
 // 0x00445EE0
-void swrModel_ConvertTextureDataToRdMaterial(int texture_type_a, int texture_type_b, int orig_width, int orig_height, int width, int height, swrMaterial** texture_data_ptr, uint8_t** palette_ptr, char a9, char a10)
+void swrModel_ConvertTextureDataToRdMaterial(int texture_type_a, int texture_type_b, int orig_width, int orig_height, int width, int height, RdMaterial** texture_data_ptr, uint8_t** palette_ptr, char a9, char a10)
 {
     // texture_data_ptr is a pointer to actual texture pixel data, and its replaced by a RdMaterial/swrMaterial*
     void* texture_data = *texture_data_ptr;
@@ -505,7 +505,7 @@ void swrModel_ConvertTextureDataToRdMaterial(int texture_type_a, int texture_typ
 }
 
 // 0x00446C20
-void swrModel_DoConvertTextureDataToRdMaterial(swrMaterial** texture_data_ptr, uint8_t** palette_data_ptr)
+void swrModel_DoConvertTextureDataToRdMaterial(RdMaterial** texture_data_ptr, uint8_t** palette_data_ptr)
 {
     // calls swrModel_ConvertTextureDataToRdMaterial
     HANG("TODO");

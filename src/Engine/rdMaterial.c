@@ -9,7 +9,7 @@ RdMaterial* rdMaterial_Load(char* pFilename)
 }
 
 // 0x0048e6d0
-int rdMaterial_LoadEntry(char* mat_fpath, swrMaterial* material)
+int rdMaterial_LoadEntry(char* mat_fpath, RdMaterial* material)
 {
     HANG("TODO");
     return 0;

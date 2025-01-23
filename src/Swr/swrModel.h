@@ -88,7 +88,7 @@
 #define swrModel_LoadTextureDataAndPalette_ADDR (0x00447370)
 #define swrModel_InitializeTextureBuffer_ADDR (0x00447420)
 #define swrModel_LoadModelTexture_ADDR (0x00447490)
-
+#define swrModel_CleanupTextureBuffer_ADDR (0x004475D0)
 #define swrModel_MeshMaterialAlreadyByteSwapped_ADDR (0x004475F0)
 #define swrModel_MeshTextureAlreadyByteSwapped_ADDR (0x00447630)
 #define swrModel_MaterialAlreadyByteSwapped_ADDR (0x00447670)
@@ -211,8 +211,8 @@ void swrModel_MeshIterateOverCollisionFaces(swrModel_Mesh* mesh);
 
 void swrModel_LoadTextureDataAndPalette(int* texture_offsets, uint8_t** texture_data_ptr, uint8_t** palette_ptr);
 void swrModel_InitializeTextureBuffer();
-void swrModel_LoadModelTexture(TEXID texture_index, swrMaterial** material_ptr, uint8_t** palette_data_ptr);
-
+void swrModel_LoadModelTexture(TEXID texture_index, RdMaterial** material_ptr, uint8_t** palette_data_ptr);
+void swrModel_CleanupTextureBuffer(void* assetBufferPtr);
 bool swrModel_MeshMaterialAlreadyByteSwapped(swrModel_MeshMaterial* mesh_material);
 bool swrModel_MeshTextureAlreadyByteSwapped(swrModel_MaterialTexture* texture);
 bool swrModel_MaterialAlreadyByteSwapped(swrModel_Material* material);
