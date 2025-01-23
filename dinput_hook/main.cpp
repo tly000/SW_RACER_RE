@@ -20,6 +20,7 @@
 
 #include <optional>
 #include <unordered_map>
+#include <cstring>
 
 extern "C"
 {
@@ -33,6 +34,8 @@ extern "C"
 #include <Raster/rdCache.h>
 #include <Swr/swrViewport.h>
 #include <Swr/swrRace.h>
+#include <Swr/swrModel.h>
+#include <Engine/rdMaterial.h>
 #include <Platform/stdControl.h>
 #include <Primitives/rdMatrix.h>
 #include <Primitives/rdMath.h>
@@ -294,7 +297,7 @@ void sub_445980_Hook(int16_t a1, int16_t a2)
         const int N = 3;
         for (int i = 0; i < N; i++)
         {
-            const float t = float(i+1) / N;
+            const float t = float(i + 1) / N;
             if (!prev_transforms.empty())
             {
                 for (const auto& [node, transform] : curr_transforms)
@@ -355,6 +358,33 @@ void swrRace_HandleInputs_Hook(swrRace* player)
     hook_call_original(swrRace_HandleInputs, player);
 }
 
+void** texture_buffer_replacement = nullptr;
+
+void swrModel_InitializeTextureBuffer_Hook()
+{
+    swrLoader_OpenBlock(swrLoader_TYPE_TEXTURE_BLOCK);
+    swrLoader_ReadAt(swrLoader_TYPE_TEXTURE_BLOCK, 0, &texture_count, 4u);
+    texture_count = SWAP32(texture_count);
+
+    texture_buffer_replacement = (void**)malloc(texture_count * sizeof(uint32_t));
+    memset(texture_buffer_replacement, 0, texture_count * sizeof(uint32_t));
+
+    char* range_begin = (char*)0x00447420;
+    char* range_end = (char*)0x004475ED;
+    DWORD old_protect;
+    VirtualProtect(range_begin, range_end - range_begin, PAGE_EXECUTE_READWRITE, &old_protect);
+
+    *(void**)0x4474B1 = texture_buffer_replacement;
+    *(void**)0x4474C4 = texture_buffer_replacement;
+    *(void**)0x447555 = texture_buffer_replacement;
+    *(void**)0x4475D5 = texture_buffer_replacement;
+    *(void**)0x4475E7 = texture_buffer_replacement + texture_count;
+
+    VirtualProtect(range_begin, range_end - range_begin, old_protect, &old_protect);
+
+    swrLoader_CloseBlock(swrLoader_TYPE_TEXTURE_BLOCK);
+}
+
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
     if (fdwReason != DLL_PROCESS_ATTACH)
@@ -389,6 +419,9 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 
     // rrdual mode:
     // hook_replace(swrRace_HandleInputs, swrRace_HandleInputs_Hook);
+
+    // remove texture count limitation
+    // hook_replace(swrModel_InitializeTextureBuffer, swrModel_InitializeTextureBuffer_Hook);
 
     init_hooks();
 
