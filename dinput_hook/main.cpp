@@ -47,6 +47,13 @@ extern "C"
     FILE* hook_log = nullptr;
 }
 
+#define ENABLE_IMGUI 1
+#define ENABLE_CUSTOM_TRACK_LOADER 0
+#define ENABLE_REMOVE_TEXTURE_COUNT_LIMIT 0
+#define ENABLE_FRAME_INTERPOLATION 0
+#define ENABLE_RRDUAL_MODE 0
+
+#if ENABLE_IMGUI
 static WNDPROC WndProcOrig;
 
 LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -166,10 +173,9 @@ void stdConsole_SetCursorPos_Hook(int X, int Y)
 {
     virtual_cursor_pos = POINT{ X, Y };
 }
+#endif
 
-extern "C" HRESULT WINAPI DirectDrawCreateHook(GUID* guid, LPDIRECTDRAW* dd, IUnknown* unk);
-extern "C" HRESULT (*WINAPI DirectDrawCreatePtr)(GUID* guid, LPDIRECTDRAW* dd, IUnknown* unk);
-
+#if ENABLE_CUSTOM_TRACK_LOADER
 void write(uint32_t address, void* data, int size)
 {
     DWORD old_protect;
@@ -241,7 +247,9 @@ void swrRace_CourseInfoMenu_Hook(swrObjHang* hang)
     }
     hook_call_original(swrRace_CourseInfoMenu, hang);
 }
+#endif
 
+#if ENABLE_FRAME_INTERPOLATION
 std::unordered_map<swrModel_NodeTransformed*, rdMatrix34> prev_transforms, curr_transforms;
 std::optional<rdMatrix44> prev_cam_matrix;
 rdMatrix44 curr_cam_matrix;
@@ -347,7 +355,9 @@ void sub_445980_Hook(int16_t a1, int16_t a2)
         prev_cam_matrix = curr_cam_matrix;
     }
 }
+#endif
 
+#if ENABLE_RRDUAL_MODE
 void swrRace_HandleInputs_Hook(swrRace* player)
 {
     // fprintf(hook_log, "swrRace_DebugFlag=%08x\n", swrRace_DebugFlag);
@@ -357,7 +367,9 @@ void swrRace_HandleInputs_Hook(swrRace* player)
     localPlayerTurnAxisInput[2] = (stdControl_aAxisPos[2] - 32768) / 32768.0;
     hook_call_original(swrRace_HandleInputs, player);
 }
+#endif
 
+#if ENABLE_REMOVE_TEXTURE_COUNT_LIMIT
 void** texture_buffer_replacement = nullptr;
 
 void swrModel_InitializeTextureBuffer_Hook()
@@ -384,6 +396,7 @@ void swrModel_InitializeTextureBuffer_Hook()
 
     swrLoader_CloseBlock(swrLoader_TYPE_TEXTURE_BLOCK);
 }
+#endif
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
@@ -395,6 +408,13 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     fprintf(hook_log, "[DllMain]\n");
     fflush(hook_log);
 
+#if ENABLE_FRAME_INTERPOLATION
+    DetourTransactionBegin();
+    DetourAttach(&sub_445980, sub_445980_Hook);
+    DetourTransactionCommit();
+#endif
+
+#if ENABLE_CUSTOM_TRACK_LOADER
     // enable one more circuit
     uint32_t max_circuit_idx = 4;
     write(0x043B0BA + 6, &max_circuit_idx, sizeof(max_circuit_idx));
@@ -403,25 +423,23 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     char zero = '\0';
     write(0x4C0EE4, &zero, 1);
 
-    // frame interpolation:
-    // DetourTransactionBegin();
-    // DetourAttach(&sub_445980, sub_445980_Hook);
-    // DetourTransactionCommit();
+    hook_replace(swrUI_GetTrackNameFromId, swrUI_GetTrackNameFromId_Hook);
+    hook_replace(swrRace_CourseInfoMenu, swrRace_CourseInfoMenu_Hook);
+#endif
 
-    // custom track menu:
-    // hook_replace(swrUI_GetTrackNameFromId, swrUI_GetTrackNameFromId_Hook);
-    // hook_replace(swrRace_CourseInfoMenu, swrRace_CourseInfoMenu_Hook);
+#if ENABLE_IMGUI
+    hook_replace(stdDisplay_Update, stdDisplay_Update_Hook);
+    hook_replace(stdConsole_GetCursorPos, stdConsole_GetCursorPos_Hook);
+    hook_replace(stdConsole_SetCursorPos, stdConsole_SetCursorPos_Hook);
+#endif
 
-    // imgui:
-    // hook_replace(stdDisplay_Update, stdDisplay_Update_Hook);
-    // hook_replace(stdConsole_GetCursorPos, stdConsole_GetCursorPos_Hook);
-    // hook_replace(stdConsole_SetCursorPos, stdConsole_SetCursorPos_Hook);
+#if ENABLE_RRDUAL_MODE
+    hook_replace(swrRace_HandleInputs, swrRace_HandleInputs_Hook);
+#endif
 
-    // rrdual mode:
-    // hook_replace(swrRace_HandleInputs, swrRace_HandleInputs_Hook);
-
-    // remove texture count limitation
-    // hook_replace(swrModel_InitializeTextureBuffer, swrModel_InitializeTextureBuffer_Hook);
+#if ENABLE_REMOVE_TEXTURE_COUNT_LIMIT
+    hook_replace(swrModel_InitializeTextureBuffer, swrModel_InitializeTextureBuffer_Hook);
+#endif
 
     init_hooks();
 
